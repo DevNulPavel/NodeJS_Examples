@@ -21,7 +21,7 @@
 
 // Коллбек с отложенным вызовом
 {
-	console.log('\n');
+	console.log('');
 
 	function additionAsync(a, b, callback) {
 		var localCallback = () => callback(a + b); // Делаем замыкание
@@ -35,7 +35,7 @@
 
 // Функции можно применять так же для изменения значений
 {
-	console.log('\n');
+	console.log('');
 
 	var callback = element => {
 	 	return element - 1;
@@ -151,5 +151,45 @@
 			console.log("Valid read 2: " + data);
 		});
 	});
+}
 
+// Чтение json файла
+{
+	const fs = require('fs');
+	
+	// Функция чтения Json файла
+	function readJSON(filename, callback) {
+		// Коллбек завершения чтения
+		var readCallback = (err, data) => {
+			if(err){
+				// Пробрасываем ошибку чтения файла в коллбек
+				return callback(err);
+			}
+
+			let parsedData = null;
+			try {
+				// Парсим содержимое файла раз мы смогли нормально прочитать
+				parsedData = JSON.parse(data);
+			} catch(err) {
+				// Отлавливаем ошибку парсинга если есть и пробрасываем ее
+				return callback(err);
+			}
+			
+			// Распарсили без проблем, возвращаем данные
+			callback(null, filename, parsedData);
+		};
+
+		// Пытаемся прочитать файл
+		fs.readFile(filename, 'utf8', readCallback);
+	}
+
+	let jsonParseCallback = (err, name, data) => {
+		if (err) {
+			return console.error(err);
+		}
+		console.log("Parsed json with name '" + name + "': " + JSON.stringify(data))
+	};
+
+	readJSON('valid_json.json', jsonParseCallback); // dumps the content
+	//readJSON('invalid_json.json', jsonParseCallback); // prints error (SyntaxError)
 }
