@@ -1,0 +1,8 @@
+# https://github.com/github/gitignore/blob/master/Global/IntelliJ.gitignore
+*.iml
+*.ipr
+*.iws
+.idea/
+.DS_Store
+
+/node_modules
