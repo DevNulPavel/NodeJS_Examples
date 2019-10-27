@@ -27,12 +27,15 @@ var truthy = function () {
     return true
 }
 
+// Функция создания сервера
 var createServer = function (e, opts) {
+    // Создаем http сервер
     var server = http.createServer()
     var index = opts.index
     var getType = opts.type || mime.getType.bind(mime)
     var filter = opts.filter || truthy
     
+    // Функция готовности
     var onready = function () {
         if (typeof index !== 'number') {
             index = e.files.reduce(function (a, b) {
@@ -47,13 +50,21 @@ var createServer = function (e, opts) {
         if (opts.sort) e.files.sort(opts.sort)
     }
     
-    if (e.torrent) onready()
-    else e.on('ready', onready)
+    // Если торрент уже готов, запускаем сразу, иначе вешаем обработчик на готовность
+    if (e.torrent) {
+        onready()
+    } else {
+        e.on('ready', onready)
+    }
     
+    // Обработчик запроса
     server.on('request', function (request, response) {
+        // Парсим url
         var u = url.parse(request.url)
+        // Получаем хост
         var host = request.headers.host || 'localhost'
         
+        // функция в плейлист
         var toPlaylist = function () {
             var toEntry = function (file, i) {
                 return '#EXTINF:-1,' + file.path + '\n' + 'http://' + host + '/' + i
@@ -62,6 +73,7 @@ var createServer = function (e, opts) {
             return '#EXTM3U\n' + e.files.filter(filter).map(toEntry).join('\n')
         }
         
+        // Функция конверации в Json
         var toJSON = function () {
             var totalPeers = e.swarm.wires
             
@@ -166,43 +178,54 @@ var createServer = function (e, opts) {
             response.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + file.length)
             if (request.method === 'HEAD') return response.end()
             pump(file.createReadStream(range), response)
-        })
+    })
         
-        server.on('connection', function (socket) {
-            socket.setTimeout(36000000)
-        })
+    server.on('connection', function (socket) {
+        socket.setTimeout(36000000)
+    })
         
-        return server
+    return server
+}
+    
+
+module.exports = function (torrent, opts) {
+    // Опции создаем, если нету их
+    if (!opts) {
+        opts = {}
     }
     
-    module.exports = function (torrent, opts) {
-        if (!opts) opts = {}
-        
-        // Parse blocklist
-        if (opts.blocklist) opts.blocklist = parseBlocklist(opts.blocklist)
-        
-        var engine = torrentStream(torrent, xtend(opts, {port: opts.peerPort}))
-        
-        // Just want torrent-stream to list files.
-        if (opts.list) return engine
-        
-        // Pause/Resume downloading as needed
-        engine.on('uninterested', function () {
-            engine.swarm.pause()
-        })
-        
-        engine.on('interested', function () {
-            engine.swarm.resume()
-        })
-        
-        engine.server = createServer(engine, opts)
-        
-        // Listen when torrent-stream is ready, by default a random port.
-        engine.on('ready', function () {
-            engine.server.listen(opts.port || 0, opts.hostname)
-        })
-        
-        engine.listen()
-        
+    // Парсим блоклист, функция находится выше
+    if (opts.blocklist) {
+        opts.blocklist = parseBlocklist(opts.blocklist)
+    }
+    
+    // Создаем потоковый движок работы с торрентом
+    var engine = torrentStream(torrent, xtend(opts, {port: opts.peerPort}))
+    
+    // Если нужен только список файлов, то возвращаем результат
+    if (opts.list) {
         return engine
     }
+    
+    // Паузим или восстанавливаем если надо
+    engine.on('uninterested', function () {
+        engine.swarm.pause()
+    })
+    
+    engine.on('interested', function () {
+        engine.swarm.resume()
+    })
+    
+    // Создаем непосредственно сервер
+    engine.server = createServer(engine, opts)
+    
+    // Вызывается, когда торрент поток будет готов
+    engine.on('ready', function () {
+        // Запускаем сервер
+        engine.server.listen(opts.port || 0, opts.hostname)
+    })
+    
+    engine.listen()
+    
+    return engine
+}
