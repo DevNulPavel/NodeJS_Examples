@@ -16,6 +16,8 @@ var parsetorrent = require('parse-torrent') // Парсилка торрент �
 var bufferFrom = require('buffer-from')
 var path = require('path')
 
+var indexModule = require('./index')
+
 // Название процесса
 process.title = 'peerflix'
 
@@ -153,7 +155,8 @@ var ontorrent = function (torrent) {
     }
     
     // Создаем движок для скачивания
-    var engine = peerflix(torrent, argv)
+    //var engine = peerflix(torrent, argv) - index.js модуль
+    var engine = indexModule.createEngine(torrent, argv)
     var hotswaps = 0
     var verified = 0
     var invalid = 0
