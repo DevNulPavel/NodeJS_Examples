@@ -101,7 +101,11 @@ function waitExample(cb){
         console.log("After wait");
         emitter.emit('finish'); // Так выбрасывается событие
     };
-    setTimeout(completeEvent, 1000);
+    //setTimeout(completeEvent, 1000);
+    //setImmediate(completeEvent); // Либо можно сразу же запустить на следующей итерации цикла
+    //process.nextTick(completeEvent); // Либо можно сразу же запустить на следующей итерации цикла до таймеров?
+
+    // The main advantage to using setImmediate() over setTimeout() is setImmediate() will always be executed before any timers if scheduled within an I/O cycle, independently of how many timers are present.
     
     //return emitter; // Можно вернуть
     emitter.on("finish", cb) // А можно просто назначить коллбек
