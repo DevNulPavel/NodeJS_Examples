@@ -34,11 +34,47 @@ server.on("close", () => {
 
 server.bind(9999);
 
+var bufferIndex = 0;
+var totalBufferSize = 1024*1024;
+var fullBuffer = Buffer.alloc(totalBufferSize, 0xAA);
+var chunkSize = 256;
+var totalChunksCount = totalBufferSize / chunkSize;
+var curChunkBegin = 0;
+
 setInterval(()=>{
-     for (let [_, val] of clients){
-        server.send("test", val.port, val.addr, (err)=>{});
-     }
-}, 250);
+    if (clients.size == 0){
+        return;
+    }
+
+    for (var i = 0; i < 128; i++){
+        var dataForSend = fullBuffer.slice(curChunkBegin, curChunkBegin + chunkSize);
+        var chunkIndex = curChunkBegin;
+        curChunkBegin += chunkSize;
+    
+        var metaInfoSize = 18;
+        var msg = Buffer.alloc(metaInfoSize + chunkSize);
+    
+        var byteOffset = 0;
+        byteOffset = msg.writeInt16BE(bufferIndex, byteOffset);
+        byteOffset = msg.writeInt32BE(totalBufferSize, byteOffset);
+        byteOffset = msg.writeInt32BE(totalChunksCount, byteOffset);
+        byteOffset = msg.writeInt32BE(chunkIndex, byteOffset);
+        byteOffset = msg.writeInt32BE(curChunkBegin, byteOffset);
+        byteOffset = msg.writeInt16BE(chunkSize, byteOffset);
+        dataForSend.copy(msg, byteOffset);
+    
+        for (let [_, val] of clients){
+            server.send(msg, val.port, val.addr, (err)=>{});
+        }
+
+        // Старт заново
+        if (curChunkBegin + chunkSize > totalBufferSize){
+            curChunkBegin = 0;
+            bufferIndex += 1;
+            console.log("Start again");
+        }
+    }
+}, 50);
 
 setInterval(()=>{
     var timeNow = Date.now();
