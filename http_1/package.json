@@ -1,0 +1,21 @@
+{
+  "name": "http_1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node express.js",
+    "debug_http": "node debug http.js",
+    "debug_express": "DEBUG=express* node express.js",
+    "debug_dev_tools_first_line": "node --inspect http.js",
+    "debug_dev_tools_first_line": "node --inspect-brk http.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-handlebars": "^3.1.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.5"
+  }
+}
