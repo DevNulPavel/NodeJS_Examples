@@ -1,46 +1,53 @@
 "use strict";
 
 // Фильтрация с использованием прокидываемой функции
-var numbers = [2, 6, 7, 8, 1];
-var even = numbers.filter(function(x) {
-  return x%2 === 0;
-});
-console.log(even);
-
-// Фильтрация с использованием стрелочной функции
-var numbers = [2, 6, 7, 8, 1];
-var even = numbers.filter(x => { 
+{
+	// let/const - область видимости блока, var - область видимость функции или глобальная
+	const numbers = [2, 6, 7, 8, 1];
+	const even = numbers.filter(function(x) {
 	return x%2 === 0;
-});
-console.log(even);
+	});
+	console.log(even);
+}
 
 // Фильтрация с использованием стрелочной функции
-var numbers = [2, 6, 7, 8, 1];
-var even = numbers.filter((x) => {
-  	if (x%2 === 0) {
-    	console.log(x + ' is even!');
-    	return true;
-  	}
-  	return false;
-});
-console.log(even);
+{
+	const numbers = [2, 6, 7, 8, 1];
+	const even = numbers.filter(x => { 
+		return x%2 === 0;
+	});
+	console.log(even);	
+}
+
+// Фильтрация с использованием стрелочной функции
+{
+	const numbers = [2, 6, 7, 8, 1];
+	const even = numbers.filter((x) => {
+		if (x%2 === 0) {
+			console.log(x + ' is even!');
+			return true;
+		}
+		return false;
+	});
+	console.log(even);
+}
 
 
 // Неправильное использование контекста в коллбеке
 {
 	function DelayedGreeter(name) {
-	  this.name = name;
+	  	this.name = name;
 	}
 
 	DelayedGreeter.prototype.greet = function() {
 		var callback = function() {
-			// контекст this у нас не тот
+			// контекст this у нас не тот, тут контекст именно текущей функции
 			console.log('Hello ' + this.name);
 		};
 		setTimeout(callback, 250);
 	};
 
-	var greeter = new DelayedGreeter('World');
+	const greeter = new DelayedGreeter('World');
 	greeter.greet(); // will print “Hello undefined”	
 }
 
@@ -51,13 +58,14 @@ console.log(even);
 	}
 
 	DelayedGreeter.prototype.greet = function() {
-		var callback = function() {
+		const callback = function() {
+			// Здесь мы работаем с this, который был привязан 
 	    	console.log('Hello ' + this.name);
-	  	}.bind(this); // Привязываем контекст к коллбеку
+		}.bind(this); // Привязываем контекст к коллбеку  
 	  	setTimeout(callback , 500);
 	};
 
-	var greeter = new DelayedGreeter('World');
+	const greeter = new DelayedGreeter('World');
 	greeter.greet(); // will print “Hello World”
 }
 
@@ -69,25 +77,27 @@ console.log(even);
 
 	DelayedGreeter.prototype.greet = function() {
 		// Стрелочная функция автоматически биндит переменные
-		var callback = () => {
+		const callback = () => {
 			console.log('Hello ' + this.name);
 		};
 	  	setTimeout(callback , 750);
 	};
 
-	var greeter = new DelayedGreeter('World');
+	const greeter = new DelayedGreeter('World');
 	greeter.greet(); // will print “Hello World”
 }
 
 // Время жизни переменной неверное
 {
-	if (false) {
-	  	let x = "hello";
+	if (true) {
+		//let x = "hello"; // let живет в пределах блока
+		//const x = "hello"; // const живет в пределах блока
+		//var x = "VAR"; // var живет в пределах функции / глобально
 	}
-	//console.log(x); // ReferenceError: x is not defined
+	console.log(x); // ReferenceError: x is not defined
 
 	for (let i=0; i < 10; i++) {
-	  // do something here
+	  	// do something here
 	}
 	//console.log(i); // ReferenceError: i is not defined
 }
@@ -109,9 +119,9 @@ console.log(even);
 // Старый способ описания класса из JS
 {
 	function Person(name, surname, age) {
-		  this.name = name;
-		  this.surname = surname;
-		  this.age = age;
+		this.name = name;
+		this.surname = surname;
+		this.age = age;
 	}
 	// Аналог метода, доступен this
 	Person.prototype.getFullName = function() {
@@ -153,7 +163,7 @@ console.log(even);
 // Наследование классов
 {
 	class Person {
-		constructor (name, surname, age) {
+		constructor(name, surname, age) {
 			this.name = name;
 			this.surname = surname;
 			this.age = age;
@@ -214,21 +224,21 @@ console.log(even);
 	console.log("\n");
 
 	let person = {
-	  name : 'George',
-	  surname : 'Boole',
+		name : 'George',
+		surname : 'Boole',
 
-	  get fullname () {
-	    return this.name + ' ' + this.surname;
-	  },
-	  set fullname (fullname) {
-	    let parts = fullname.split(' ');
-	    this.name = parts[0];
-	    this.surname = parts[1];
-	  }
+		get fullname () {
+			return this.name + ' ' + this.surname;
+		},
+		set fullname (fullname) {
+			let parts = fullname.split(' ');
+			this.name = parts[0];
+			this.surname = parts[1];
+		}
 	};
 
 	console.log(person.fullname); // "George Boole"
-	person.fullname = 'Alan Turing'
+	person.fullname = 'Alan Turing';
 	console.log(person.fullname); // "Alan Turing"
 	console.log(person.name); // "Alan"
 }
@@ -259,15 +269,14 @@ console.log(even);
 	console.log("\n");
 
 	const tests = new Map();
-	tests.set(() => 2+2, 4);
-	tests.set(() => 2*2, 4);
-	tests.set(() => 2/2, 1);
+	tests.set(() => { 2+2 }, 4);
+	tests.set(() => { 2*2 }, 4);
+	tests.set(() => { 2/2 }, 1);
 
 	for (let entry of tests) {
 		console.log((entry[0]() === entry[1]) ? 'PASS' : 'FAIL');
 	}
 }
-
 
 // Работа с set
 {
@@ -290,20 +299,22 @@ console.log(even);
 	console.log("\n");
 
 	// Создаем словарь
-	let obj = {};
+	let keyObj = {};
 
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/WeakMap
+	// Ключами WeakMap могут быть только объекты. Примитивы в качестве ключей не допускаются (т.е. Symbol не может быть ключом WeakMap).
 	// Создаем Map, который содержит в себе слабые ссылки на объекты
 	const map = new WeakMap();
-	map.set(obj, {key: "some_value"});
+	map.set(keyObj, {key: "some_value"});
 
 	// Сейчас мы получаем обычный объект
-	console.log(map.get(obj)); // {key: "some_value"}
+	console.log(map.get(keyObj)); // {key: "some_value"}
 
 	// Сбрасываем ссылку на объект
-	obj = undefined; // now obj and the associated data in the map will be cleaned up in the next gc cycle
+	keyObj = undefined; // Сбрасываем ссылку, теперь обхект может быть собран сборщиком, так как контейнер WeakMap не увеличивает счетчик ссылок на объект-ключ
 
 	// Теперь будем возвращать пустой объект
-	console.log(map.get(obj));
+	console.log(map.get(keyObj));
 }
 
 // Словарь, в котором мы храним слабые ссылки на объекты
@@ -316,7 +327,7 @@ console.log(even);
 
 	console.log(set.has(obj1)); // true
 
-	obj1 = undefined; // now obj1 will be removed from the set
+	obj1 = undefined; // теперь объект может быть собран сборкой мусора, контейнер не мешает, так как он хранит слабую ссылку
 
 	console.log(set.has(obj1)); // false	
 }

@@ -1,20 +1,30 @@
 "use strict";
 
+// TODO: Функция выдает awaitable объект, в котором у нас последний параметр - это коллбек???
 module.exports = function(callbackBasedApi) {
-  return function promisified() {
-    const args = [].slice.call(arguments);
-    return new Promise((resolve, reject) => {    //[1]
-      args.push(function(err, result) {      //[2]
-        if(err) {
-          return reject(err);          //[3]
-        }
-        if(arguments.length <= 2) {        //[4]
-          resolve(result);
-        } else {
-          resolve([].slice.call(arguments, 1));
-        }
-      });
-      callbackBasedApi.apply(null, args);      //[5]
-    });
-  }
+    return function promisified() {
+        // TODO: ???
+        // Вызываем метод slice у массива arguments, тем самым подменяя объект вызова
+        const args = [].slice.call(arguments); // TODO: Вызываем метод arguments у каждого объекта слайса ???
+        // Коллбек нашего промиса
+        const callback = (resolve, reject) => {
+            // Внутренний коллбек добавления объекта
+            const pushCallback = function(err, result) {
+                // Если ошибка, обрубаем promise
+                if(err) {
+                    return reject(err);
+                }
+
+                // Иначе вызываем коллбек
+                if(arguments.length <= 2) {
+                    resolve(result);
+                } else {
+                    resolve([].slice.call(arguments, 1));
+                }
+            };
+            args.push(pushCallback);
+            callbackBasedApi.apply(null, args);
+        };
+        return new Promise(callback);
+    }
 };

@@ -3,16 +3,16 @@
 
 // Прокидываем коллбек внутрь функции
 {
-	function add(a, b) {
+	/*function add(a, b) {
 		return a + b;
-	}
+	}*/
 
 	function addCB(a, b, callback) {
 		callback(a + b);
 	}
 
 	console.log('before');
-	var callback = result => { 
+	const callback = result => { 
 		console.log('Result: ' + result); 
 	};
 	addCB(1, 2, callback);
@@ -24,8 +24,18 @@
 	console.log('');
 
 	function additionAsync(a, b, callback) {
-		var localCallback = () => callback(a + b); // Делаем замыкание
-	  	setTimeout(localCallback, 100);
+		const localCallback = () => {
+			callback(a + b); // Делаем замыкание
+		};
+
+		// Главным преимуществом использования setImmediate() вместо setTimeout() является то, 
+		// что setImmediate() всегда будет выполняться перед любыми таймерами, 
+		// если они запланированы в цикле ввода/вывода, независимо от количества присутствующих таймеров.
+		//setInterval() планирует запуск сценария после истечения минимального порога в миллисекундах с периодичностью определенной
+		//setTimeout() планирует запуск сценария после истечения минимального порога в миллисекундах.
+		//setImmediate() предназначен для выполнения сценария после завершения текущей фазы опроса, срабатывает на следующей итерации или «тике» цикла событий
+		//process.nextTick() срабатывает сразу на той же фазе
+		setTimeout(localCallback, 100);
 	}
 
 	console.log('before');
@@ -37,7 +47,7 @@
 {
 	console.log('');
 
-	var callback = element => {
+	const callback = element => {
 	 	return element - 1;
 	}
 	const result = [1, 5, 7].map(callback);
@@ -57,14 +67,13 @@
 	const fs = require('fs');
 	const cache = {}; // Кэш для данных файлов
 
-
 	function inconsistentRead(filename, callback) {
 		// Если данные есть в кэше
 		if(cache[filename]) {
 			// Тогда просто вызываем коллбек с данными
 			//callback(cache[filename]);
 			// Правильный вариант вызова коллбека
-			process.nextTick(() => callback(cache[filename]));
+			setImmediate(() => callback(cache[filename]));
 		} else {
 			// Асинхронно читаем данные
 			fs.readFile(filename, 'utf8', (err, data) => {
