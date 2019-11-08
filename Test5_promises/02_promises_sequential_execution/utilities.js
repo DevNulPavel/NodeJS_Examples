@@ -1,18 +1,21 @@
 "use strict";
 
-const urlParse = require('url').parse;
-const urlResolve = require('url').resolve;
+const urlParse = require('url').parse; // Получаем только нужную функцию
+const urlResolve = require('url').resolve; // Получаем только нужную функцию
 const slug = require('slug');
 const path = require('path');
 const cheerio = require('cheerio');
 
 
 module.exports.urlToFilename = function urlToFilename(url) {
+    // Парсим адрес
     let parsedUrl = urlParse(url);
+    // Разделяем адрес на отдельные части
     let urlPath = parsedUrl.path.split('/')
-        .filter(component => !!component)
-        .map(component => slug(component))
+        .filter(component => { return !!component; }) // TODO: ???
+        .map(component => { return slug(component); })
         .join('/');
+    // Полуачаем имя файла
     let filename = path.join(parsedUrl.hostname, urlPath);
     if(!path.extname(filename).match(/htm/)) {
         filename += '.html';
@@ -21,7 +24,7 @@ module.exports.urlToFilename = function urlToFilename(url) {
 };
 
 module.exports.getLinkUrl = function getLinkUrl(currentUrl, element) {
-    let link = urlResolve(currentUrl, element.attribs.href || "");
+    let link = urlResolve(currentUrl, element.attribs.href || ""); // Если есть ссылка, иначе берем пустую строку
     let parsedLink = urlParse(link);
     let currentParsedUrl = urlParse(currentUrl);
     if(parsedLink.hostname !== currentParsedUrl.hostname || !parsedLink.pathname) {
@@ -31,8 +34,8 @@ module.exports.getLinkUrl = function getLinkUrl(currentUrl, element) {
 };
 
 module.exports.getPageLinks = function getPageLinks(currentUrl, body) {
-    return [].slice.call(cheerio.load(body)('a'))
-        .map(element => module.exports.getLinkUrl(currentUrl, element))
+    return [].slice.call(cheerio.load(body)('a')) // Получаем все ссылки
+        .map(element => module.exports.getLinkUrl(currentUrl, element)) // получаем относительные ссылки
         .filter(element => !!element);
 };
 

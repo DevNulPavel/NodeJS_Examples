@@ -21,7 +21,8 @@ function spiderLinks(currentUrl, body, nesting) {
     // Получаем список ссылок
     const links = utilities.getPageLinks(currentUrl, body);
     // Перебираем ссылки
-    const linkCb = link => {
+    // Послeдовательный вариант
+    /*const linkCb = link => {
         // После окончания текущего обещания - будем стартовать обработку следующего
         const nextLinkSpiderCb = () => {
             spider(link, nesting - 1);
@@ -29,9 +30,16 @@ function spiderLinks(currentUrl, body, nesting) {
         promise = promise.then(nextLinkSpiderCb);
     };
     links.forEach(linkCb);
-    
     // Возвращаем получившуюся цепочку загрузки ссылок
-    return promise;
+    return promise;*/
+
+    // Параллельный вариант
+    let promises = [];
+    for (let i in links){
+        const spiderProm = spider(links[i], nesting - 1);
+        promises.push(spiderProm);
+    }
+    return Promise.all(promises);
 }
 
 function download(url, filename) {
@@ -56,7 +64,7 @@ function download(url, filename) {
 
 function spider(url, nesting) {
     let filename = "result/" + utilities.urlToFilename(url);
-    console.log(`File path: ${filename}`);
+    console.log(`File path: ${filename}, url: ${url}`);
 
     // Если файлик существует
     const loadCallback = (body) => {
@@ -77,7 +85,7 @@ function spider(url, nesting) {
         };
         return download(url, filename).then(downloadCompleteCb);
     };
-    return readFileProm(filename, 'utf8').then(loadCallback, errorCallback);;
+    return readFileProm(filename, 'utf8').then(loadCallback, errorCallback);
 }
 
 //const TEST_URL = process.argv[2];

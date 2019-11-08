@@ -19,9 +19,15 @@ function spiderLinks(currentUrl, body, nesting) {
     if(nesting === 0) {
         return promise;
     }
+
     // Получаем список ссылок
-    const links = utilities.getPageLinks(currentUrl, body);
-    // Перебираем ссылки
+    const links = utilities.getPageLinks(currentUrl, body).filter((link) => { 
+        const valid = typeof(link) == "string";
+        return valid;
+    });
+
+    // Последовательный вариант
+    /*// Перебираем ссылки
     const linkCb = link => {
         // После окончания текущего обещания - будем стартовать обработку следующего
         const nextLinkSpiderCb = async () => {
@@ -33,7 +39,17 @@ function spiderLinks(currentUrl, body, nesting) {
     links.forEach(linkCb);
     
     // Возвращаем получившуюся цепочку загрузки ссылок
-    return promise;
+    return promise;*/
+    
+    // Параллельный вариант
+    let promises = [];
+    links.forEach((link) =>{
+        console.log(link);
+        const prom = spider(link, nesting-1);
+        promises.push(prom);
+    });
+
+    return Promise.all(promises);
 }
 
 async function download(url, filename) {
