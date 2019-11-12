@@ -5,6 +5,8 @@ const path = require("path");
 const googleapis = require("googleapis");
 
 // http://datalytics.ru/all/rabotaem-s-api-google-drive-s-pomoschyu-python/
+// https://developers.google.com/drive/api/v3/reference/files
+// https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
 
 
 const KEY_FILE = __dirname + "/keys_test.json";
@@ -18,6 +20,7 @@ const SCOPES = [
     //"https://www.googleapis.com/auth/drive.scripts"
 ];
 // ^^^ https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
+
 
 async function main(){
     // Описываем аутентификацию
@@ -48,11 +51,12 @@ async function main(){
         auth: authClient
     };
     const drive = googleapis.google.drive(driveConfig);
-    console.log(drive);
+    //console.log(drive);
 
     // Запрашиваем список файлов текущих
     const listParams = {
         auth: authClient,
+        fields: "nextPageToken, files(id, parents, name, kind, size)" // https://developers.google.com/drive/api/v3/reference/files
         //corpora?: string; // Bodies of items (files/documents) to which the query applies. Supported bodies are 'default', 'domain', 'drive' and 'allDrives'. Prefer 'default' or 'drive' to 'allDrives' for efficiency.
         //corpus?: string; // The body of items (files/documents) to which the query applies. Deprecated: use 'corpora' instead.
         //driveId?: string; // ID of the shared drive to search.
@@ -64,12 +68,13 @@ async function main(){
     };
     const fileIds = [];
     const listResult = await drive.files.list(listParams);
+    console.log(listResult.data)
     if(listResult.data.files){
         const files = listResult.data.files;
         for(let i = 0; i < files.length; i++){
             const file = files[i];
             fileIds.push(file.id);
-            //console.log(file);
+            console.log(file);
         }
     }
     console.log(`Total files in drive: ${fileIds.length}`);
@@ -98,6 +103,8 @@ async function main(){
     }
     await Promise.all(promises);
     console.log(`Files deleted from drive: ${totalFilesDeleted}`);
+
+    return;
 
     // Пример отгрузки файлика
     const fileName = path.basename(UPLOAD_FILE);
