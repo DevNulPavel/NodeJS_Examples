@@ -1,23 +1,207 @@
 "use strict";
 
 const fs = require("fs");
-// our handy library
-const google = require("googleapis");
+const googleapis = require("googleapis");
 
-
-// see below in "Finding your secret.json" to find out how to get this
-const key = require('../../../secret.json');
 
 // any unique id will do; a timestamp is easiest
+const TRACK = "alpha";
 const EDIT_ID = "" + (new Date().getTime());
-
-// editing "scope" allowed for OAuth2
-const scopes = [
-    'https://www.googleapis.com/auth/androidpublisher'
-];
+const PACKAGE_NAME = "com.gameinsight.gplay.mmanor"; // "com.gameinsight.gplay.island2", "com.gameinsight.gplay.mmanor" 
+const SCOPE = "https://www.googleapis.com/auth/androidpublisher"; // editing "scope" allowed for OAuth2
+const KEY_FILE = "./keys_prod.json";
 
 
-function startEdit(jwtClient, play) {
+
+async function main(){
+
+    // Описываем аутентификацию
+    const authOptions = {
+        keyFile: KEY_FILE,
+        scopes: SCOPE,
+        //keyFilename: // Path to a .json, .pem, or .p12 key file
+        //keyFile; // Path to a .json, .pem, or .p12 key file
+        //credentials; // Object containing client_email and private_key properties
+        //clientOptions; // Options object passed to the constructor of the client
+        //scopes; // Required scopes for the desired API request
+        //projectId; // Your project ID.
+    };
+    const auth = new googleapis.google.auth.GoogleAuth(authOptions);
+    const authClient = await auth.getClient();
+
+    // Авторизуемся
+    const сredentials = await authClient.authorize();
+    authClient.setCredentials(сredentials);
+
+    // Создаем паблишер
+    const publisherParams = {
+        version: "v3",
+        auth: authClient,
+        params: {
+            packageName: PACKAGE_NAME
+        }
+    }
+    const publisher = googleapis.google.androidpublisher(publisherParams);
+
+    // Пример получения отзывов
+    /*{
+        // https://googleapis.dev/nodejs/googleapis/latest/androidpublisher/interfaces/Params$Resource$Reviews$List.html
+        const listParameters = {
+            auth: client,
+            maxResults: 200,
+            packageName: PACKAGE_NAME,
+            startIndex: 0,
+            token: token,
+            translationLanguage: "ru"
+        };
+        const list = await publisher.reviews.list(listParameters);
+        for (let i = 0; i < list.data.reviews.length; i++){
+            const review = list.data.reviews[i];
+            if(!review.authorName){
+                continue;
+            }
+            console.log(`Comments form author: ${review.authorName.toString()}`);
+            for (let j = 0; j < review.comments.length; j++) {
+                const comment = review.comments[j];
+                if (!comment.userComment || !comment.userComment.text){
+                    continue;
+                }
+                console.log(`-> ${comment.userComment.text.toString()}`);
+            }
+        }
+    }*/
+    
+    {
+        // Запрашиваем editId для возможности редактирования
+        const insertParams = {
+            auth: authClient,
+            packageName: PACKAGE_NAME
+            //requestBody?: Schema$AppEdit;
+        };
+        const editObj = await publisher.edits.insert(insertParams);
+        const editId = editObj.data.id;
+
+        // Запрашиваем getId
+        const getParams = {
+            auth: authClient,
+            editId: editId,
+            packageName: PACKAGE_NAME
+        };
+        const getObj = await publisher.edits.get(getParams);
+        const getId = getObj.data.id;
+
+        /*// Запрашиваем список бандлов и apk
+        const listParameters = {
+            editId: editId,
+            auth: authClient,
+            packageName: PACKAGE_NAME
+        };
+        const bundlesProm = publisher.edits.bundles.list(listParameters);
+        const apksProm = publisher.edits.apks.list(listParameters);
+
+        // Выводим список бандлов
+        const bundlesList = await bundlesProm;
+        if(bundlesList.data.bundles){
+            for (let i = 0; i < bundlesList.data.bundles.length; i++){
+                const bundle = bundlesList.data.bundles[i]
+                console.log(bundle);
+            }
+        }else{
+            console.log("No bundles");
+        }
+
+        // Выводим список apk
+        const apksList = await apksProm;
+        if(apksList.data.apks){
+            for (let i = 0; i < apksList.data.apks.length; i++){
+                const apk = apksList.data.apks[i]
+                console.log(apk);
+            }
+        }else{
+            console.log("No apks");
+        }*/
+
+        // Запрашиваем tracks
+        /*const listParams = {
+            editId: editId,
+            auth: authClient,
+            packageName: PACKAGE_NAME
+        };
+        const tracksInfo = await publisher.edits.tracks.list(listParams);
+        if (tracksInfo.data.tracks){
+            const tracks = tracksInfo.data.tracks;
+            for(let i = 0; i < tracks.length; i++){
+                const track = tracks[i];
+                console.log(track);
+            }
+        }*/
+
+        // Запрос apklistings
+        /*if(publisher.edits.apklistings){
+            const apkListingsParams = {
+                auth: authClient,
+                packageName: PACKAGE_NAME,
+                editId: editId
+                //apkVersionCode?: number;
+            };
+            const listings = await publisher.edits.apklistings.list(apkListingsParams);
+            console.log(listings);
+        }*/
+
+        // Получаем информацию о приложении
+        /*const detailsGetParams = {
+            editId: editId,
+            auth: authClient,
+            packageName: PACKAGE_NAME
+        };
+        const detailsResult = await publisher.edits.details.get(detailsGetParams);
+        console.log(detailsResult.data);*/
+
+        /*const expansionfilesParams = {
+            editId: editId,
+            auth: authClient,
+            packageName: PACKAGE_NAME,
+            apkVersionCode: "11.14.1",
+            expansionFileType: ""
+        };
+        const expansionfilesRes = await publisher.edits.expansionfiles.get(expansionfilesParams);
+        console.log(expansionfilesRes.data);*/
+
+        // Запрос картинок
+        /*const imagesParams = {
+            editId: editId,
+            auth: authClient,
+            packageName: PACKAGE_NAME,
+            imageType: "phonescreenshots", // [featuregraphic, icon, phonescreenshots, promographic, seveninchscreenshots, teninchscreenshots, tvbanner, tvscreenshots, wearscreenshots]
+            language: "en-US"
+        };
+        const imagesRes = await publisher.edits.images.list(imagesParams);
+        console.log(imagesRes.data);*/
+
+        // Запрос описания приложения на разных языках
+        /*const listingsParams = {
+            editId: editId,
+            auth: authClient,
+            packageName: PACKAGE_NAME,
+        };
+        const listingRes = await publisher.edits.listings.list(listingsParams);
+        console.log(listingRes.data);*/
+
+        // TODO: Запрос валидации???
+        /*const validateParams = {
+            editId: editId,
+            auth: authClient,
+            packageName: PACKAGE_NAME,
+        }
+        const validateResult = await publisher.edits.validate(validateParams);
+        const validateId = validateResult.data.id;
+        console.log(validateResult.data);*.
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*function startEdit(jwtClient, oauth2Client, play) {
     return new Promise(function(resolve, reject) {
         // Авторизуемся
         jwtClient.authorize(function(err, tokens) {
@@ -75,17 +259,18 @@ function upload(play, data) {
 
 function setTrack(play, data) {
     const edit = data.edit;
-    const track = tracks[argv[0] || 'alpha'];
+    const track = TRACK; // TODO: ???
     
     return new Promise(function(resolve, reject) {
-        play.edits.tracks.update({
+        const updateConfig = {
             editId: edit.id,
             track: track,
             resource: {
                 track: track,
                 versionCodes: [+data.uploadResults.versionCode]
             }
-        }, function(err, res) {
+        };
+        play.edits.tracks.update(updateConfig, function(err, res) {
             if(err || !res) {
                 reject(err);
             }
@@ -98,9 +283,10 @@ function setTrack(play, data) {
 
 function commitToPlayStore(play, data) {
     return new Promise(function(resolve, reject) {
-        play.edits.commit({
+        const commitConfig = {
             editId: data.edit.id
-        }, function(err, res) {
+        };
+        play.edits.commit(commitConfig, function(err, res) {
             if(err || !res) {
                 reject(err);
             }
@@ -110,9 +296,12 @@ function commitToPlayStore(play, data) {
     });
 }
 
-function main(){
+async function main(){
+    //const publisher = new googleapis.androidpublisher_v3.Androidpublisher(publisherParams);
+
     // here, we'll initialize our client
-    const oauth2Client = new google.auth.OAuth2();
+    const key = require("./keys.json");
+    const oauth2Client = new google.oauth2_v2.Oauth2("v2");
     const jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, scopes, null);
     const play = google.androidpublisher({
         version: 'v3',
@@ -120,16 +309,16 @@ function main(){
         params: {
             // default options
             // this is the package name for your initial app you've already set up on the Play Store
-            packageName: 'com.example.app'
+            packageName: 'com.gameinsight.gplay.enginetest'
         }
     });
 
     google.options({ 
         auth: oauth2Client 
-    });
+    });*/
 
     // "open" our edit
-    startEdit(jwtClient, play).then(function(data) {
+    /*startEdit(jwtClient, play).then(function(data) {
         //var apk = require('fs').readFileSync('./Chronicled.apk');
         const apk = fs.createReadStream("file.apk");
         
@@ -151,6 +340,6 @@ function main(){
         console.log(err);
         process.exit(0);
     });
-}
+}*/
 
 main();
