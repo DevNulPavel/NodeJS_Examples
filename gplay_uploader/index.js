@@ -3,6 +3,10 @@
 const fs = require("fs");
 const googleapis = require("googleapis");
 
+//http://frontendcollisionblog.com/javascript/2015/12/26/using-nodejs-to-upload-app-to-google-play.html
+//https://googleapis.dev/nodejs/googleapis/latest/androidpublisher/classes/Resource$Edits$Apks-1.html#upload
+//https://stackoverflow.com/questions/48274009/cant-upload-apk-to-google-play-developer-via-publisher-api
+
 
 // any unique id will do; a timestamp is easiest
 //const EDIT_ID = "" + (new Date().getTime());
