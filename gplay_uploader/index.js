@@ -5,25 +5,22 @@ const googleapis = require("googleapis");
 
 
 // any unique id will do; a timestamp is easiest
-const TRACK = "alpha";
-const EDIT_ID = "" + (new Date().getTime());
+//const EDIT_ID = "" + (new Date().getTime());
 const PACKAGE_NAME = "com.gameinsight.gplay.mmanor"; // "com.gameinsight.gplay.island2", "com.gameinsight.gplay.mmanor" 
-const SCOPE = "https://www.googleapis.com/auth/androidpublisher"; // editing "scope" allowed for OAuth2
 const KEY_FILE = "./keys_prod.json";
-
+const SCOPE = "https://www.googleapis.com/auth/androidpublisher"; // editing "scope" allowed for OAuth2
+const TARGET_TRACK_NAME = "internal";
+const BUNDLE_FILE = "test.aab";
 
 
 async function main(){
-
     // Описываем аутентификацию
     const authOptions = {
-        keyFile: KEY_FILE,
-        scopes: SCOPE,
+        keyFile: KEY_FILE,  // Path to a .json, .pem, or .p12 key file
+        scopes: SCOPE,      // Required scopes for the desired API request
         //keyFilename: // Path to a .json, .pem, or .p12 key file
-        //keyFile; // Path to a .json, .pem, or .p12 key file
         //credentials; // Object containing client_email and private_key properties
         //clientOptions; // Options object passed to the constructor of the client
-        //scopes; // Required scopes for the desired API request
         //projectId; // Your project ID.
     };
     const auth = new googleapis.google.auth.GoogleAuth(authOptions);
@@ -32,6 +29,12 @@ async function main(){
     // Авторизуемся
     const сredentials = await authClient.authorize();
     authClient.setCredentials(сredentials);
+
+    // Устанавливаем глобально auth клиента для всех запросов, чтобы не надо было каждый раз прокидывать в качестве параметра
+    /*const globalParams = {
+        auth: authClient
+    };
+    googleapis.google.options(globalParams);*/
 
     // Создаем паблишер
     const publisherParams = {
@@ -42,6 +45,100 @@ async function main(){
         }
     }
     const publisher = googleapis.google.androidpublisher(publisherParams);
+
+    // Запрашиваем editId для возможности редактирования
+    const insertParams = {
+        auth: authClient,
+        packageName: PACKAGE_NAME
+        //requestBody?: Schema$AppEdit;
+    };
+    const editObj = await publisher.edits.insert(insertParams);
+    const editId = editObj.data.id;
+
+    // Отгрузка bundle в стор
+    const bundleStream = fs.createReadStream(BUNDLE_FILE); //var apk = require('fs').readFileSync('./Chronicled.apk');
+    const uploadParams = {
+        auth: authClient,
+        editId: editId,
+        packageName: PACKAGE_NAME,
+        media: {
+            mimeType: "application/octet-stream", // TODO: ??? "application/octet-stream", "application/vnd.android.package-archive",
+            body: bundleStream,
+        }
+    };
+    const uploadResult = await publisher.edits.bundles.upload(uploadParams);
+    const uploadedVersion = uploadResult.data.versionCode;
+
+    // TODO: нужен ли вызов валидации?
+    const validateParams = {
+        editId: editId,
+        auth: authClient,
+        packageName: PACKAGE_NAME,
+    }
+    const validateResult = await publisher.edits.validate(validateParams);
+    const validateId = validateResult.data.id;
+    console.log(validateResult.data);
+
+    // Обновляем track
+    const updateTrackConfig = {
+        packageName: PACKAGE_NAME,
+        auth: authClient,
+        editId: editId,
+        track: TARGET_TRACK_NAME,
+        requestBody: {
+            track: track,
+            versionCodes: [uploadedVersion]
+            //userFraction:
+        }
+    };
+    const updateTrackRes = await publisher.edits.tracks.update(updateTrackConfig);
+
+    // Коммитим изменения
+    const commitParams = {
+        auth: authClient,
+        editId: editId,
+        packageName: PACKAGE_NAME,
+    };
+    const commitRes = await publisher.edits.commit(commitParams);
+}
+
+main();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+async function mainTests(){
+    // Описываем аутентификацию
+    /*const authOptions = {
+        keyFile: KEY_FILE,  // Path to a .json, .pem, or .p12 key file
+        scopes: SCOPE,      // Required scopes for the desired API request
+        //keyFilename: // Path to a .json, .pem, or .p12 key file
+        //credentials; // Object containing client_email and private_key properties
+        //clientOptions; // Options object passed to the constructor of the client
+        //projectId; // Your project ID.
+    };
+    const auth = new googleapis.google.auth.GoogleAuth(authOptions);
+    const authClient = await auth.getClient();
+
+    // Авторизуемся
+    const сredentials = await authClient.authorize();
+    authClient.setCredentials(сredentials);*/
+
+    // Устанавливаем глобально auth клиента для всех запросов, чтобы не надо было каждый раз прокидывать в качестве параметра
+    /*const globalParams = {
+        auth: authClient
+    };
+    googleapis.google.options(globalParams);*/
+
+    // Создаем паблишер
+    /*const publisherParams = {
+        version: "v3",
+        auth: authClient,
+        params: {
+            packageName: PACKAGE_NAME
+        }
+    }
+    const publisher = googleapis.google.androidpublisher(publisherParams);*/
 
     // Пример получения отзывов
     /*{
@@ -72,7 +169,7 @@ async function main(){
     }*/
     
     {
-        // Запрашиваем editId для возможности редактирования
+        /*// Запрашиваем editId для возможности редактирования
         const insertParams = {
             auth: authClient,
             packageName: PACKAGE_NAME
@@ -88,7 +185,7 @@ async function main(){
             packageName: PACKAGE_NAME
         };
         const getObj = await publisher.edits.get(getParams);
-        const getId = getObj.data.id;
+        const getId = getObj.data.id;*/
 
         /*// Запрашиваем список бандлов и apk
         const listParameters = {
@@ -195,7 +292,35 @@ async function main(){
         }
         const validateResult = await publisher.edits.validate(validateParams);
         const validateId = validateResult.data.id;
-        console.log(validateResult.data);*.
+        console.log(validateResult.data);*/
+
+        // Отгрузка apk в стор
+        /*const apkStream = fs.createReadStream("file.apk"); //var apk = require('fs').readFileSync('./Chronicled.apk');
+        const uploadParams = {
+            auth: authClient,
+            editId: editId,
+            packageName: PACKAGE_NAME,
+            media: {
+                mimeType: "application/vnd.android.package-archive", // TODO: ??? "application/octet-stream", "application/vnd.android.package-archive",
+                body: apkStream,
+            }
+        };
+        const uploadResult = await publisher.edits.apks.upload(uploadParams);
+        const uploadedVersion = uploadResult.data.versionCode;*/
+
+        // Устанавливаем track после отгрузки
+        /*const updateTrackConfig = {
+            packageName: PACKAGE_NAME,
+            auth: authClient,
+            editId: editId,
+            track: TARGET_TRACK_NAME,
+            requestBody: {
+                track: track,
+                versionCodes: [uploadedVersion]
+                //userFraction:
+            }
+        };
+        const updateTrackRes = await publisher.edits.tracks.update(updateTrackConfig);*/        
     }
 }
 
@@ -341,5 +466,3 @@ async function main(){
         process.exit(0);
     });
 }*/
-
-main();
