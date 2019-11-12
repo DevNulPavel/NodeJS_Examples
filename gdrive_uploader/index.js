@@ -10,11 +10,12 @@ const googleapis = require("googleapis");
 
 
 const KEY_FILE = __dirname + "/keys_test.json";
-const UPLOAD_FILE = "/Users/devnul/Desktop/download.jpeg";
+const UPLOAD_FILE = __dirname + "/index.js";
+const TARGET_FOLDER_ID = "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY";
 const SCOPES = [
-    //"https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive",            // Работа со всеми файлами на диске
     //"https://www.googleapis.com/auth/drive.appdata",
-    "https://www.googleapis.com/auth/drive.file",
+    //"https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
     //"https://www.googleapis.com/auth/drive.metadata",
     //"https://www.googleapis.com/auth/drive.activity",
     //"https://www.googleapis.com/auth/drive.scripts"
@@ -56,7 +57,7 @@ async function main(){
     // Запрашиваем список файлов текущих
     const listParams = {
         auth: authClient,
-        fields: "nextPageToken, files(id, parents, name, kind, size)" // https://developers.google.com/drive/api/v3/reference/files
+        fields: "nextPageToken, files(id, parents, name, kind, size, mimeType)" // https://developers.google.com/drive/api/v3/reference/files
         //corpora?: string; // Bodies of items (files/documents) to which the query applies. Supported bodies are 'default', 'domain', 'drive' and 'allDrives'. Prefer 'default' or 'drive' to 'allDrives' for efficiency.
         //corpus?: string; // The body of items (files/documents) to which the query applies. Deprecated: use 'corpora' instead.
         //driveId?: string; // ID of the shared drive to search.
@@ -68,13 +69,18 @@ async function main(){
     };
     const fileIds = [];
     const listResult = await drive.files.list(listParams);
-    console.log(listResult.data)
+    //console.log(listResult.data)
     if(listResult.data.files){
         const files = listResult.data.files;
         for(let i = 0; i < files.length; i++){
             const file = files[i];
-            fileIds.push(file.id);
-            console.log(file);
+            const fileType = file.mimeType;
+            //console.log(file);
+            if(fileType == "application/vnd.google-apps.folder"){
+
+            }else{
+                fileIds.push(file.id);
+            }
         }
     }
     console.log(`Total files in drive: ${fileIds.length}`);
@@ -104,8 +110,6 @@ async function main(){
     await Promise.all(promises);
     console.log(`Files deleted from drive: ${totalFilesDeleted}`);
 
-    return;
-
     // Пример отгрузки файлика
     const fileName = path.basename(UPLOAD_FILE);
     const fileSize = fs.statSync(UPLOAD_FILE).size;
@@ -114,13 +118,12 @@ async function main(){
         auth: authClient,
         requestBody: {
             name: fileName,
-            parents: ["1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY"],
-            //fields: "files(id, name, parents)" // "nextPageToken, files(id, name, mimeType)"
+            parents: [TARGET_FOLDER_ID]
         },
         media: {
             mimeType: "application/octet-stream",
             body: fileStream
-        }
+        },
         //ignoreDefaultVisibility?: boolean; //Whether to ignore the domain's default visibility settings for the created file. Domain administrators can choose to make all uploaded files visible to the domain by default; this parameter bypasses that behavior for the request. Permissions are still inherited from parent folders.
         //keepRevisionForever?: boolean; // Whether to set the 'keepForever' field in the new head revision. This is only applicable to files with binary content in Google Drive. Only 200 revisions for the file can be kept forever. If the limit is reached, try deleting pinned revisions.
         //ocrLanguage?: string; // A language hint for OCR processing during image import (ISO 639-1 code).
@@ -136,15 +139,26 @@ async function main(){
     };
     const uploadResult = await drive.files.create(createParams, createMethodParams);
     const uploadedFileId = uploadResult.data.id;
-    console.log(uploadResult.data);
+    //console.log(uploadResult.data);
+
+    /*const exportConfig = {
+        auth: authClient,
+        fileId: uploadedFileId,
+        mimeType: 'text/javascript'
+    };
+    const exportRes = await drive.files.export(exportConfig);
+    console.log(exportRes.data);*/
 
     // Запрос информации
-    /*const getParams = {
+    const getParams = {
         auth: authClient,
-        fileId: uploadedFileId
+        fileId: uploadedFileId,
+        fields: "id, parents, name, kind, size, mimeType, webContentLink, webViewLink" // https://developers.google.com/drive/api/v3/
     }
     const getRes = await drive.files.get(getParams);
-    console.log(getRes.data);*/
+    //console.log(getRes.data);
+    console.log(`Download url: ${getRes.data.webContentLink}`);
+    console.log(`Web view url: ${getRes.data.webViewLink}`);
 
     /*const drivesParams = {
         auth: authClient,
