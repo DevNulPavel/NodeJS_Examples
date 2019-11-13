@@ -2,29 +2,28 @@
 
 const fs = require("fs");
 const path = require("path");
-const readline = require('readline');
+const readline = require("readline");
 const googleapis = require("googleapis");
+const commander = require("commander")
 
 // http://datalytics.ru/all/rabotaem-s-api-google-drive-s-pomoschyu-python/
 // https://developers.google.com/drive/api/v3/reference/files
 // https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
 
-
 const KEY_FILE = __dirname + "/keys_test.json";
-//const UPLOAD_FILE = __dirname + "/index.js";
-const UPLOAD_FILE = "/Users/devnul/Desktop/Archive.zip";
+const UPLOAD_FILE = __dirname + "/index.js";
 const TARGET_FOLDER_ID = "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY";
 const SCOPES = [
+    "https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
     //"https://www.googleapis.com/auth/drive",            // Работа со всеми файлами на диске
     //"https://www.googleapis.com/auth/drive.appdata",
-    "https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
     //"https://www.googleapis.com/auth/drive.metadata",
     //"https://www.googleapis.com/auth/drive.activity",
     //"https://www.googleapis.com/auth/drive.scripts"
 ];
 
 
-async function createAuthClient(keyFile, scopes){
+async function createAuthClientFromFile(keyFile, scopes){
     // Описываем аутентификацию
     const authOptions = {
         keyFile: keyFile,  // Path to a .json, .pem, or .p12 key file
@@ -36,6 +35,27 @@ async function createAuthClient(keyFile, scopes){
     };
     const auth = new googleapis.google.auth.GoogleAuth(authOptions);
     const authClient = await auth.getClient();
+    //console.log(authClient);
+
+    // Авторизуемся
+    const сredentials = await authClient.authorize();
+    authClient.setCredentials(сredentials);
+
+    return authClient;
+}
+
+async function createAuthClientFromInfo(email, keyId, key, scopes){
+    // Описываем аутентификацию
+    const authOptions = {
+        email: email,
+        //keyFile?: string;
+        key: key,
+        keyId: keyId,
+        scopes: scopes
+        //subject?: string;
+        //additionalClaims?: {};
+    };
+    const authClient = new googleapis.google.auth.JWT(authOptions);
     //console.log(authClient);
 
     // Авторизуемся
@@ -149,7 +169,7 @@ async function createFolder(drive, parentFolder, newFolderName){
     return newFolderId;
 }
 
-async function uploadFile(drive, parentFolder, filePath, progressCb = ()=>{}){
+async function uploadFile(drive, parentFolder, filePath, progressCb){
     // Пример отгрузки файлика
     const fileName = path.basename(filePath);
     const fileStream = fs.createReadStream(filePath); //var apk = require('fs').readFileSync('./Chronicled.apk');
@@ -160,7 +180,7 @@ async function uploadFile(drive, parentFolder, filePath, progressCb = ()=>{}){
             parents: [parentFolder]
         },
         media: {
-            mimeType: "application/octet-stream", // TODO: Может быть перенести надо в requestBody
+            //mimeType: "application/octet-stream", // TODO: Может быть перенести надо в requestBody
             body: fileStream
         },
         fields: "id, parents, name, kind, size, mimeType, webContentLink, webViewLink"
@@ -170,12 +190,61 @@ async function uploadFile(drive, parentFolder, filePath, progressCb = ()=>{}){
         //useContentAsIndexableText?: boolean; // Whether to use the uploaded content as indexable text.
         //requestBody?: Schema$File; // Request body metadata
     };
-    const createMethodParams = {
-        onUploadProgress: progressCb
-    };
+    const createMethodParams = {};
+    if(progressCb){
+        let prevUploadedVal = 0;
+        const localProgressCb = (event)=>{
+            const diff = event.bytesRead - prevUploadedVal;
+            prevUploadedVal = event.bytesRead;
+            progressCb(diff);
+        }
+        createMethodParams["onUploadProgress"] = localProgressCb;
+    }
     const uploadResult = await drive.files.create(createParams, createMethodParams);
+    uploadResult.data.srcFilePath = fileName;
     //console.log(uploadResult.data);
     return uploadResult.data;
+}
+
+async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb){
+    // Непосредственно процесс отгрузки
+    let createProgressCallback;
+    if(progressCb){
+        let totalFilesSize = 0;
+        for(let i = 0; i < filesForUploading.length; i++){
+            const fileForUploading = filesForUploading[i];
+            totalFilesSize += fs.statSync(fileForUploading).size;
+        }
+
+        let totalBytesRead = 0;
+        createProgressCallback = (diff)=>{
+            totalBytesRead += diff;
+            const progress = (totalBytesRead / totalFilesSize) * 100;
+            progressCb(progress);
+        };
+    }
+
+    const MAX_REQ_COUNT = 5;
+    const promises = new Set();
+    let uploadResults = [];
+    for(let i = 0; i < filesForUploading.length; i++){
+        const fileForUploading = filesForUploading[i];
+
+        const uploadInfoProm = uploadFile(drive, parentFolderId, fileForUploading, createProgressCallback);
+        promises.add(uploadInfoProm);
+        uploadInfoProm.finally(()=>{         // Вызывается после then, позволяет удалить promise
+            promises.delete(uploadInfoProm);
+        });
+
+        if (promises.size > MAX_REQ_COUNT){
+            const uploadInfo = await Promise.race(promises);
+            uploadResults.push(uploadInfo);
+        }       
+    }
+    const finalCompletedValues = await Promise.all(promises);
+    uploadResults = uploadResults.concat(finalCompletedValues);
+    //console.log(uploadResults);
+    return uploadResults;
 }
 
 async function otherExamples(){
@@ -200,40 +269,76 @@ async function otherExamples(){
 }
 
 async function main(){
-    const authClient = await createAuthClient(KEY_FILE, SCOPES);
+    // Парсим аргументы коммандной строки, https://github.com/tj/commander.js
+    const commaSeparatedList = (value, dummyPrevious) => {
+        return value.split(",").filter((val)=>{
+            return val.length > 0;
+        });
+    }
+    commander.requiredOption("-i, --input_files <comma_separeted_files_path>", "Input files for uploading: -i 'file1','file2'", commaSeparatedList);
+    commander.requiredOption("-t, --target_folder_id <folder_id>", "Target Google drive folder ID");
+    commander.parse(process.argv);
+    const filesForUploading = commander.input_files;
+    const targetFolderId = commander.target_folder_id;
 
+    // Тестовый код параметров отгрузки
+    //const targetFolderId = TARGET_FOLDER_ID;
+    //const filesForUploading = UPLOAD_FILE;
+
+    // Создание аутентификаии сразу из файлика
+    //const authClient = await createAuthClientFromFile(KEY_FILE, SCOPES);
+
+    // Тестовый код для получения параметров из файлика
+    const jsonData = require(KEY_FILE);
+    const email = jsonData.client_email;
+    const keyId = jsonData.private_key_id;
+    const key = jsonData.private_key;
+
+    // Пробуем получить из переменных окружения данные для авторизации
+    /*let email = process.env["GOOGLE_SERVICE_EMAIL"];
+    let keyId = process.env["GOOGLE_KEY_ID"];
+    let key = process.env["GOOGLE_KEY"];
+    if (!email || !keyId || !key){
+        throw Error("Missing enviroment variables");
+    }*/
+
+    // Создание аутентифицации из параметров
+    const authClient = await createAuthClientFromInfo(email, keyId, key, SCOPES);
+
+    // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 
+    // Получаем список файлов и папок
     const {fileIds, folderIds} = await requestFilesList(drive, authClient);
     console.log(`Total files in drive: ${fileIds.length}`);
     console.log(`Total folders in drive: ${folderIds.length}`);
 
+    // Удаляем файлы и папки, параллельно нельзя вызывать, так как есть ограничения на количество запросов у API
     const filesDeleted = await deleteFiles(drive, fileIds);
     console.log(`Files deleted from drive: ${filesDeleted}`);
     const foldersDeleted = await deleteFiles(drive, folderIds);
     console.log(`Folders deleted from drive: ${foldersDeleted}`);
 
-    const newFolderId = await createFolder(drive, TARGET_FOLDER_ID, "NewFolder_"+Date.now())
+    // Создаем новую подпапку
+    const newFolderName = "NewFolder_"+Date.now();
+    const newFolderId = await createFolder(drive, targetFolderId, newFolderName);
 
-    process.stdout.write("Start uploading...")
-    let createProgressCallback;
-    var isInteractiveTerminal = process.stdout.isTTY && process.stdin.isTTY && !!process.stdin.setRawMode
-    if(isInteractiveTerminal){
-        const fileSize = fs.statSync(UPLOAD_FILE).size;
-        createProgressCallback = (event)=>{
-            const progress = (event.bytesRead / fileSize) * 100;
-            readline.clearLine(process.stdout, 0);
-            readline.cursorTo(process.stdout, 0);
-            process.stdout.write(`Upload file progress: ${Math.round(progress)}%`);
-        };
-    }else{
-        createProgressCallback = ()=>{};
+    // Выполняем отгрузку
+    console.log("Start uploading...")
+    const progressCb = (progress)=>{
+        readline.clearLine(process.stdout, 0);
+        readline.cursorTo(process.stdout, 0);
+        process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
     }
-    const uploadInfo = await uploadFile(drive, newFolderId, UPLOAD_FILE, createProgressCallback)
-
+    const uploadResults = await uploadFiles(drive, newFolderId, filesForUploading, progressCb);
     console.log("");
-    console.log(`Download url: ${uploadInfo.webContentLink}`);
-    console.log(`Web view url: ${uploadInfo.webViewLink}`); 
+
+    // Выводим результаты
+    for(let i = 0; i < uploadResults.length; i++){
+        const uploadInfo = uploadResults[i];
+        console.log(`Download url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}`);
+        //console.log(`Web view url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webViewLink}`); 
+    }
 }
 
 main();
