@@ -1,14 +1,15 @@
 {
-  "name": "gplay_uploader",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "googleapis": "^45.0.0"
-  }
+    "name": "gplay_uploader",
+    "version": "1.0.0",
+    "description": "",
+    "main": "main.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "commander": "^4.0.1",
+        "googleapis": "^45.0.0"
+    }
 }

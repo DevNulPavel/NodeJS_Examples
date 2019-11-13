@@ -2,7 +2,6 @@
 
 const fs = require("fs");
 const path = require("path");
-const readline = require("readline");
 const googleapis = require("googleapis");
 
 function createDriveObject(authClient){
@@ -200,7 +199,7 @@ async function otherExamples(){
     console.log(`Web view url: ${getRes.data.webViewLink}`);*/   
 }
 
-async function uploadWithAuth(authClient, targetFolderId, filesForUploading){
+async function uploadWithAuth(authClient, targetFolderId, filesForUploading, progressCb){
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 
@@ -220,14 +219,7 @@ async function uploadWithAuth(authClient, targetFolderId, filesForUploading){
     const newFolderId = await createFolder(drive, targetFolderId, newFolderName);
 
     // Выполняем отгрузку
-    console.log("Start uploading...")
-    const progressCb = (progress)=>{
-        readline.clearLine(process.stdout, 0);
-        readline.cursorTo(process.stdout, 0);
-        process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
-    }
     const uploadResults = await uploadFiles(drive, newFolderId, filesForUploading, progressCb);
-    console.log("");
 
     return uploadResults;
 }
