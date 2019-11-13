@@ -1,6 +1,5 @@
 "use strict";
 
-const commander = require("commander")
 const googleapis = require("googleapis");
 
 

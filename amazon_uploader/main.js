@@ -1,7 +1,7 @@
 "use strict";
 
 const commander = require("commander")
-const google_auth = require("./google_auth");
+const amazon_auth = require("./amazon_auth");
 const uploader = require("./uploader");
 
 
@@ -15,10 +15,10 @@ async function main(){
     //const authClient = await createAuthClientFromFile(KEY_FILE, ["https://www.googleapis.com/auth/androidpublisher"]);
 
     // TODO: Тестовый код для получения параметров аутентификации из файлика
-    const jsonData = require("./keys_prod.json");
-    const email = jsonData.client_email;
-    const keyId = jsonData.private_key_id;
-    const key = jsonData.private_key;
+    const jsonData = require("./keys_prod_island2_2.json");
+    const clientId = jsonData.client_id;
+    const clientSecret = jsonData.client_secret;
+    const appId = jsonData.app_id;
 
     // Пробуем получить из переменных окружения данные для авторизации
     /*let email = process.env["GOOGLE_SERVICE_EMAIL"];
@@ -29,7 +29,9 @@ async function main(){
     }*/
 
     // Создание аутентифицации из параметров
-    const authClient = await google_auth.createAuthClientFromInfo(email, keyId, key, ["https://www.googleapis.com/auth/androidpublisher"]);
+    const authClient = await amazon_auth.requestTokenWithInfo(clientId, clientSecret, appId);
+
+    return;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
