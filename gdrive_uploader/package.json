@@ -1,15 +1,16 @@
 {
-  "name": "gdrive_uploader",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "commander": "^4.0.1",
-    "googleapis": "^45.0.0"
-  }
+    "name": "gdrive_uploader",
+    "version": "1.0.0",
+    "description": "",
+    "main": "main.js",
+    "scripts": {
+        "uploading_test": "node main.js -i \"/Users/devnul/Desktop/com.gameinsight.gplay.islandtales_20190711_1345.gfxtrace\",\"/Users/devnul/Desktop/Archive.zip\" -t \"1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY\"",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "commander": "^4.0.1",
+        "googleapis": "^45.0.0"
+    }
 }
