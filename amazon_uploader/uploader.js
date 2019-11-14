@@ -9,26 +9,25 @@ const request = require("request-promise-native");
 
 
 async function requestToken(clientId, clientSecret) {
-    const postRequestData = {
-        "url": "https://api.amazon.com/auth/o2/token",
-        "method": "POST",
-        "json": true, // Парсим ответ и отдаем body в json
-        "form": {
+    const response = await request({
+        url: "https://api.amazon.com/auth/o2/token",
+        method: "POST",
+        json: true, // Парсим ответ и отдаем body в json
+        form: {
             "grant_type": "client_credentials",
             "client_id": clientId,
             "client_secret": clientSecret,
             "scope": "appstore::apps:readwrite" // messaging:push, appstore::apps:readwrite
         }
-    };
-    const response = await request(postRequestData);
+    });
     const accessToken = response["access_token"];
     return accessToken;
 }
 
 async function requestEditId(defaultRequest){
     const editsDefaultRequest = defaultRequest.defaults({
-        "url": "/edits",
-        "json": true,
+        url: "/edits",
+        json: true,
     });
 
     // POST для создания, GET для получения уже имеющегося
@@ -53,9 +52,9 @@ async function requestEditId(defaultRequest){
 
 async function getApksList(defaultEditRequest){
     const apksList = await defaultEditRequest({
-        "url": "/apks",
-        "method": "GET",
-        "json": true,
+        url: "/apks",
+        method: "GET",
+        json: true,
     });
     //console.log(apksList);
     return apksList;
@@ -91,14 +90,14 @@ async function uploadNewApk(defaultEditRequest, filePath, progressCb){
 
     const fileName = path.basename(filePath);
     const uploadResultData = await defaultEditRequest({
-        "url": "/apks/upload", // /apks/large/upload
-        "method": "POST",
-        "headers": {
+        url: "/apks/upload", // /apks/large/upload
+        method: "POST",
+        headers: {
             "fileName": fileName,
             //"Content-Type": "application/vnd.android.package-archive" // Вроде бы не надо
             "Content-Type": "application/octet-stream"
         },
-        "body": fileStream
+        body: fileStream
     });
     const uploadResultJson = JSON.parse(uploadResultData);
     return uploadResultJson;  
@@ -123,19 +122,19 @@ async function updateListing(){
 
 async function valiateChanges(defaultEditRequest){
     const resp = await defaultEditRequest({
-        "url": "/validate",
-        "method": "POST",
-        "json": true
+        url: "/validate",
+        method: "POST",
+        json: true
     })
     return resp;
 }
 
 async function commitChanges(defaultEditRequest, etag){
     const commitResp = await defaultEditRequest({
-        "url": "/commit",
-        "method": "POST",
-        "json": true,
-        "headers": {
+        url: "/commit",
+        method: "POST",
+        json: true,
+        headers: {
             "If-Match": etag
         }
     })
@@ -144,10 +143,10 @@ async function commitChanges(defaultEditRequest, etag){
 
 async function deleteEditId(defaultEditRequest, etag){
     const finishResp = await defaultEditRequest({
-        "url": "/",
-        "method": "DELETE",
-        "json": true,
-        "headers": {
+        url: "/",
+        method: "DELETE",
+        json: true,
+        headers: {
             "If-Match": etag
         }
     })
@@ -160,9 +159,9 @@ async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, prog
 
     // Создаем базовый запрос с токеном и базомвым урлом
     const defaultRequest = request.defaults({
-        "baseUrl": `https://developer.amazon.com/api/appstore/v1/applications/${appId}`,
-        "auth": {
-            "bearer": accessToken // Разворачивается в "headers"{ "Authorization": "Bearer "+accessToken }
+        baseUrl: `https://developer.amazon.com/api/appstore/v1/applications/${appId}`,
+        auth: {
+            bearer: accessToken // Разворачивается в "headers"{ "Authorization": "Bearer "+accessToken }
         }
     });
     
@@ -172,7 +171,7 @@ async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, prog
 
     // Создаем базовый запрос, но уже со списком 
     const defaultEditRequest = defaultRequest.defaults({
-        "baseUrl": `https://developer.amazon.com/api/appstore/v1/applications/${appId}/edits/${editId}`
+        baseUrl: `https://developer.amazon.com/api/appstore/v1/applications/${appId}/edits/${editId}`
     });
 
     // Выполняем отгрузку на сервер
