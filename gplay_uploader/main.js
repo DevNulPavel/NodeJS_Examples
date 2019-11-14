@@ -1,6 +1,7 @@
 "use strict";
 
-const commander = require("commander")
+const commander = require("commander");
+const readline = require("readline");
 const google_auth = require("./google_auth");
 const uploader = require("./uploader");
 
@@ -49,11 +50,14 @@ async function main(){
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    const progressCb = (progress)=>{
-        readline.clearLine(process.stdout, 0);
-        readline.cursorTo(process.stdout, 0);
-        process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
-    };
+    let progressCb = undefined;
+    if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
+        progressCb = (progress)=>{
+            readline.clearLine(process.stdout, 0);
+            readline.cursorTo(process.stdout, 0);
+            process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
+        };
+    }
     await uploader.uploadBuildWithAuth(authClient, packageName, inputFile, targetTrack, progressCb);
     console.log("");
 }

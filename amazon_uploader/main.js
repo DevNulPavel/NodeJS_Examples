@@ -1,7 +1,7 @@
 "use strict";
 
+const readline = require("readline");
 const commander = require("commander")
-const amazon_auth = require("./amazon_auth");
 const uploader = require("./uploader");
 
 
@@ -11,53 +11,47 @@ const uploader = require("./uploader");
 
 
 async function main(){    
-    // Создание аутентификаци сразу из файлика
-    //const authClient = await createAuthClientFromFile(KEY_FILE, ["https://www.googleapis.com/auth/androidpublisher"]);
-
     // TODO: Тестовый код для получения параметров аутентификации из файлика
-    const jsonData = require("./keys_prod_island2_2.json");
+    /*const jsonData = require("./keys_prod_island2_2.json");
     const clientId = jsonData.client_id;
     const clientSecret = jsonData.client_secret;
-    const appId = jsonData.app_id;
+    const appId = jsonData.app_id;*/
 
     // Пробуем получить из переменных окружения данные для авторизации
-    /*let email = process.env["GOOGLE_SERVICE_EMAIL"];
-    let keyId = process.env["GOOGLE_KEY_ID"];
-    let key = process.env["GOOGLE_KEY"];
-    if (!email || !keyId || !key){
+    let clientId = process.env["AMAZON_CLIENT_ID"];
+    let clientSecret = process.env["AMAZON_CLIENT_SECRET"];
+    let appId = process.env["AMAZON_APP_ID"];
+    if (!clientId || !clientSecret || !appId){
         throw Error("Missing enviroment variables");
-    }*/
-
-    // Создание аутентифицации из параметров
-    const authClient = await amazon_auth.requestTokenWithInfo(clientId, clientSecret, appId);
-
-    return;
+        //console.error("Missing enviroment variables");
+        //return;
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Парсим аргументы коммандной строки, https://github.com/tj/commander.js
-    /*commander.requiredOption("-i, --input_file <input apk or aab path>", "Input file for uploading");
-    commander.requiredOption("-t, --target_track <track name>", "Target track name ('internal' for ex.)");
-    commander.requiredOption("-p, --package_name <package_name>", "Package name ('com.gameinsight.gplay.mmanor' for ex.)");
+    commander.requiredOption("-i, --input_file <input apk>", "Input file for uploading");
     commander.parse(process.argv);
     const inputFile = commander.input_file;
-    const targetTrack = commander.target_track;
-    const packageName = commander.package_name;*/
 
     // TODO: Тестовый код параметров отгрузки
-    const inputFile = "test.aab";
+    /*const inputFile = "test.apk";
     const targetTrack = "internal";
-    const packageName = "com.gameinsight.gplay.mmanor";
+    const packageName = "com.gameinsight.gplay.mmanor";*/
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    const progressCb = (progress)=>{
-        readline.clearLine(process.stdout, 0);
-        readline.cursorTo(process.stdout, 0);
-        process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
-    };
-    await uploader.uploadBuildWithAuth(authClient, packageName, inputFile, targetTrack, progressCb);
+    
+    let progressCb = undefined;
+    if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
+        progressCb = (progress)=>{
+            readline.clearLine(process.stdout, 0);
+            readline.cursorTo(process.stdout, 0);
+            process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
+        };
+    }
+    const uploadResults = await uploader.uploadBuildOnServer(clientId, clientSecret, appId, inputFile, progressCb);
     console.log("");
+    console.log(uploadResults);
 }
 
 main();

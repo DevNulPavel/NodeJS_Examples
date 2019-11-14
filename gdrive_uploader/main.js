@@ -61,11 +61,14 @@ async function main(){
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Отгружаем файлики
-    const progressCb = (progress)=>{
-        readline.clearLine(process.stdout, 0);
-        readline.cursorTo(process.stdout, 0);
-        process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
-    };
+    let progressCb = undefined;
+    if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
+        progressCb = (progress)=>{
+            readline.clearLine(process.stdout, 0);
+            readline.cursorTo(process.stdout, 0);
+            process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
+        };
+    }
     const uploadResults = await uploader.uploadWithAuth(authClient, targetFolderId, filesForUploading, progressCb);
     console.log("");
     
