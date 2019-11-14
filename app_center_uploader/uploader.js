@@ -4,8 +4,9 @@ const fs = require("fs");
 const path = require("path");
 const request = require("request-promise-native");
 
-// https://docs.microsoft.com/en-us/appcenter/distribution/uploading
+//https://docs.microsoft.com/en-us/appcenter/distribution/uploading
 //https://docs.microsoft.com/en-us/appcenter/diagnostics/ios-symbolication
+//https://github.com/microsoft/appcenter/issues/965
 
 async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, symbolsFilePath, progressCb){
     const defaultRequest = request.defaults({
@@ -45,7 +46,9 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, sy
     //console.log(uploadId);
     //console.log(uploadUrl);
 
-    const needSymbolsUploading = (path.extname(buildFilePath) == "ipa") && symbolsFilePath && (path.extname(symbolsFilePath) == "dSYM");
+    //const needSymbolsUploading = (path.extname(buildFilePath) == ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) == ".zip");
+    //const needSymbolsUploading = (path.extname(buildFilePath) == ".apk") && symbolsFilePath && (path.extname(symbolsFilePath) == ".zip");
+    console.log(needSymbolsUploading);
     let downloadedSize = 0;
     let totalSize = fs.statSync(buildFilePath).size;
     if(needSymbolsUploading){
@@ -93,7 +96,9 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, sy
             method: "POST",
             json: true,
             body: {
-                "symbol_type": "Apple",
+                "symbol_type": "Breakpad", // Android
+                //"symbol_type": "Apple",  // Apple
+
                 //"client_callback": "string",
                 //"file_name": "string",
                 //"build": "string",
@@ -102,8 +107,8 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, sy
         });
         const symbolsUploadId = uploadInfo.symbol_upload_id;
         const symbolsUploadUrl = uploadInfo.upload_url;
-        console.log(symbolsUploadId);
-        console.log(symbolsUploadUrl);
+        //console.log(symbolsUploadId);
+        //console.log(symbolsUploadUrl);
 
         // Отгружаем данные
         // Чтобы "Content-Type" был "multipart/form-data" в хедерах, просто указываем formData

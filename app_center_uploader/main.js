@@ -8,7 +8,7 @@ const uploader = require("./uploader");
 async function main(){    
     // TODO: Тестовый код для получения параметров аутентификации из файлика
     //const jsonData = require("./keys_test_android.json");
-    const jsonData = require("./keys_test_ios.json");
+    const jsonData = require("./keys_test_android.json");
     const accessToken = jsonData.token;
     const appName = jsonData.app_name;
     const appOwnerName = jsonData.app_owner_name;
@@ -31,8 +31,16 @@ async function main(){
     const inputFile = commander.input_file;*/
 
     // TODO: Тестовый код параметров отгрузки
-    const inputFile = "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa";
-    //const inputFile = "/Users/devnul/Downloads/Island2-arm64-hockey-11.15.0-314-12112019_1645-821dc9f0.apk";
+    //const inputFile = "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.xcarchive.zip";
+    //const symbolsFile = undefined;
+
+    // iOS
+    //const inputFile = "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa";
+    //const symbolsFile = "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.xcarchive/dSYMs/Island2.app.dSYM.zip";
+
+    // Android
+    const inputFile = "/Users/devnul/Downloads/Island2-arm64-hockey-11.15.0-314-12112019_1645-821dc9f0.apk";
+    //const symbolsFile = "/Users/devnul/Downloads/hockey-arm32-libIsland2.zip";
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
@@ -45,7 +53,7 @@ async function main(){
         };
     }
     
-    const uploadResult = await uploader.uploadToHockeyApp(accessToken, appName, appOwnerName, inputFile, progressCb);
+    const uploadResult = await uploader.uploadToHockeyApp(accessToken, appName, appOwnerName, inputFile, symbolsFile, progressCb);
     console.log("");
     console.log(uploadResult);
 }
