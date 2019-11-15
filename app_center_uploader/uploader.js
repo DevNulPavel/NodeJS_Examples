@@ -48,15 +48,8 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath,
     // Отгружаем данные
     const fileStream = fs.createReadStream(buildFilePath);
     if (progressCb) {
-        const totalSize = fs.statSync(buildFilePath).size;
-        let downloadedSize = 0;
-        let prevProgress = 0;
         fileStream.on("data", (chunk) => {
-            downloadedSize += chunk.length;
-            const progress = (downloadedSize / totalSize) * 100;
-            const diff = progress - prevProgress;
-            prevProgress = progress;
-            progressCb(progress, diff);
+            progressCb(chunk.length);
         });
     }
     await request({
@@ -108,15 +101,8 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
     // Отгружаем данные
     const fileStream = fs.createReadStream(symbolsFilePath);
     if (progressCb) {
-        const totalSize = fs.statSync(symbolsFilePath).size;
-        let downloadedSize = 0;
-        let prevProgress = 0;
         fileStream.on("data", (chunk) => {
-            downloadedSize += chunk.length;
-            const progress = (downloadedSize / totalSize) * 100;
-            const diff = progress - prevProgress;
-            prevProgress = progress;
-            progressCb(progress, diff);
+            progressCb(chunk.length);
         });
     }
     await request({
@@ -141,7 +127,7 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
     return uploadCommitInfo;
 }
 
-async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, symbolsFilePath, progressCb){
+async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, needSymbolsUploading, symbolsFilePath, progressCb){
     // Базовый конфиг запроса
     const defaultRequest = request.defaults({
         baseUrl: "https://api.appcenter.ms/v0.1",
@@ -150,28 +136,25 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, sy
         }
     });
 
-    // Можем грузить символы или нет?
-    const needSymbolsUploading = (path.extname(buildFilePath) == ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) == ".zip");
-    console.log(needSymbolsUploading);
-
     // Отдельная переменная прогресса для каждого типа отгрузки
     let totalProgress = 0;
     
+    // Промисы для ожидания результата
     const promises = [];
 
     // Грузим билд на сервер
     let buildUploadProgressCb = undefined;
     if(progressCb){
         if(needSymbolsUploading){
-            buildUploadProgressCb = (_, diff)=>{
+            buildUploadProgressCb = (diff)=>{
                 totalProgress += diff;
-                progressCb(totalProgress / 2);
+                progressCb(totalProgress);
             };
         }else{
             buildUploadProgressCb = progressCb;
         }
     }
-    console.log("Build upload start");
+    //console.log("Build upload start");
     const uploadBuildProm = uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath, buildUploadProgressCb);
     promises.push(uploadBuildProm);
 
@@ -180,12 +163,12 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, sy
         // Грузим билд на сервер
         let symbolsUploadProgressCb = undefined;
         if(progressCb){
-            symbolsUploadProgressCb = (_, diff)=>{
+            symbolsUploadProgressCb = (diff)=>{
                 totalProgress += diff;
-                progressCb(totalProgress / 2);
+                progressCb(totalProgress);
             };
         }
-        console.log("Symbol upload start");
+        //console.log("Symbol upload start");
         const symbolsUploadProm = uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFilePath, symbolsUploadProgressCb);
         promises.push(symbolsUploadProm);
     }
@@ -193,5 +176,14 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, sy
     return Promise.all(promises);
 }
 
-module.exports.uploadToHockeyApp = uploadToHockeyApp;
+function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath){
+    // Можем грузить символы или нет?
+    const needSymbolsUploading = (path.extname(buildFilePath) == ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) == ".zip");
+    return needSymbolsUploading;    
+}
+
+module.exports = {
+    uploadToHockeyApp,
+    isSymbolsUploadingSupported
+}
 

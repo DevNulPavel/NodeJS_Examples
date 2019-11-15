@@ -1,5 +1,7 @@
 "use strict";
 
+const fs = require("fs");
+const util = require("util");
 const readline = require("readline");
 const commander = require("commander")
 const uploader = require("./uploader");
@@ -42,15 +44,32 @@ async function main(){
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
+    const withSymbolsUploading = uploader.isSymbolsUploadingSupported(inputFile, symbolsFile);
+    console.log(withSymbolsUploading);
+
     let progressCb = undefined;
     if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
-        progressCb = (progress)=>{
+        let totalBytes = 0;
+        if(withSymbolsUploading){
+            const statPromisified = util.promisify(fs.stat);
+            const prom1 = statPromisified(inputFile);
+            const prom2 = statPromisified(symbolsFile);
+            const [stat1, stat2] = await Promise.all([prom1, prom2]);
+            totalBytes = stat1.size + stat2.size;
+            //console.log(totalBytes);
+        }else{
+            totalBytes = fs.statSync(inputFile);
+        }
+
+        progressCb = (totalBytesProgress)=>{
+            const progress = (totalBytesProgress / totalBytes) * 100;
+
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
         };
     }
-    const uploadResults = await uploader.uploadToHockeyApp(accessToken, appName, appOwnerName, inputFile, symbolsFile, progressCb);
+    const uploadResults = await uploader.uploadToHockeyApp(accessToken, appName, appOwnerName, inputFile, withSymbolsUploading, symbolsFile, progressCb);
     console.log("");
     console.log(uploadResults);
 }
