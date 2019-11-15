@@ -141,17 +141,10 @@ async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb)
     // Непосредственно процесс отгрузки
     let createProgressCallback;
     if(progressCb){
-        let totalFilesSize = 0;
-        for(let i = 0; i < filesForUploading.length; i++){
-            const fileForUploading = filesForUploading[i];
-            totalFilesSize += fs.statSync(fileForUploading).size;
-        }
-
         let totalBytesRead = 0;
         createProgressCallback = (diff)=>{
             totalBytesRead += diff;
-            const progress = (totalBytesRead / totalFilesSize) * 100;
-            progressCb(progress);
+            progressCb(totalBytesRead);
         };
     }
 

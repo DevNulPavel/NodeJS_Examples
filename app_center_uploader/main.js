@@ -9,27 +9,27 @@ const uploader = require("./uploader");
 
 async function main(){    
     // TODO: Тестовый код для получения параметров аутентификации из файлика
-    //const jsonData = require("./keys_test_android.json");
+    /*//const jsonData = require("./keys_test_android.json");
     const jsonData = require("./keys_test_ios.json");
     const accessToken = jsonData.token;
     const appName = jsonData.app_name;
-    const appOwnerName = jsonData.app_owner_name;
+    const appOwnerName = jsonData.app_owner_name;*/
 
     // Пробуем получить из переменных окружения данные для авторизации
-    /*let clientId = process.env["AMAZON_CLIENT_ID"];
-    let clientSecret = process.env["AMAZON_CLIENT_SECRET"];
-    let appId = process.env["AMAZON_APP_ID"];
-    if (!clientId || !clientSecret || !appId){
+    const accessToken = process.env["APP_CENTER_ACCESS_TOKEN"];
+    const appName = process.env["APP_CENTER_APP_NAME"];
+    const appOwnerName = process.env["APP_CENTER_APP_OWNER_NAME"];
+    if (!accessToken || !appName || !appOwnerName){
         throw Error("Missing enviroment variables");
         //console.error("Missing enviroment variables");
         //return;
-    }*/
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Парсим аргументы коммандной строки, https://github.com/tj/commander.js
     /*commander.requiredOption("-i, --input_file <build_file>", "Input file for uploading");
-    commander.requiredOption("-s, --ios_symbols <*.app.dSYM.zip>", "Input symbols archive for uploading");
+    commander.option("-s, --ios_symbols <*.app.dSYM.zip>", "Input symbols archive for uploading");
     commander.parse(process.argv);
     const inputFile = commander.input_file;
     const symbolsFile = commander.ios_symbols;*/
@@ -63,7 +63,6 @@ async function main(){
 
         progressCb = (totalBytesProgress)=>{
             const progress = (totalBytesProgress / totalBytes) * 100;
-
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`Upload progress: ${Math.round(progress)}%`);

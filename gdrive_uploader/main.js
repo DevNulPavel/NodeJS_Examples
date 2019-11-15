@@ -5,6 +5,8 @@
 // https://developers.google.com/drive/api/v3/reference/files
 // 
 
+const fs = require("fs");
+const util = require("util");
 const readline = require("readline");
 const commander = require("commander")
 const google_auth = require("./google_auth");
@@ -63,7 +65,19 @@ async function main(){
     // Отгружаем файлики
     let progressCb = undefined;
     if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
-        progressCb = (progress)=>{
+        let totalBytes = 0;
+
+        const statPromisified = util.promisify(fs.stat);
+        const statsProms = filesForUploading.map((file)=>{
+            return statPromisified(file);
+        });
+        const stats = await Promise.all(statsProms);
+        stats.forEach((stat)=>{
+            totalBytes += stat.size;
+        });
+
+        progressCb = (totalBytesProgress)=>{
+            const progress = (totalBytesProgress / totalBytes) * 100;
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`Upload progress: ${Math.round(progress)}%`);

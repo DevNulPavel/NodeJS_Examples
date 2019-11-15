@@ -1,5 +1,6 @@
 "use strict";
 
+const fs = require("fs");
 const commander = require("commander");
 const readline = require("readline");
 const google_auth = require("./google_auth");
@@ -52,7 +53,9 @@ async function main(){
 
     let progressCb = undefined;
     if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
-        progressCb = (progress)=>{
+        let totalBytes = fs.statSync(inputFile);
+        progressCb = (totalBytesProgress)=>{
+            const progress = (totalBytesProgress / totalBytes) * 100;
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`Upload progress: ${Math.round(progress)}%`);

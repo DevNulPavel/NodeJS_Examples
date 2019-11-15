@@ -63,10 +63,10 @@ async function uploadBuild(publisher, editId, uploadFile, progressCb){
     };
     const methodParams = {};
     if(progressCb){
-        const totalFileSize = fs.statSync(uploadFile).size;
+        const totalBytesLoaded = 0;;
         const localProgressCb = (event)=>{
-            const progress = (event.bytesRead / totalFileSize) * 100;
-            progressCb(progress);
+            totalBytesLoaded += event.bytesRead;
+            progressCb(totalBytesLoaded);
         };
         methodParams[onUploadProgress] = localProgressCb;
     }
