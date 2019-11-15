@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2016",
+        "jsx": "preserve",
+        "sourceMap": true, //генерировать sourceMaps, нужно для отладки
+        "outDir": "build/.", //проект билдится из папки . в папку build
+        "rootDir": ".",
+        "plugins": [
+            {
+                "name": "typescript-tslint-plugin",
+                "alwaysShowRuleFailuresAsWarnings": false,
+                "ignoreDefinitionFiles": true,
+                "configFile": "tslint.json",
+                "suppressWhileTypeErrorsPresent": false,
+                "jsEnable": true
+            }
+        ]
+    },
+    "compileOnSave": true,
+    "exclude": [
+        "node_modules",
+        "**/node_modules/*"
+    ]
+}

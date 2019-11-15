@@ -1,0 +1,18 @@
+{
+    "name": "typescript_1",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "build_and_start": "tsc && pushd build; node index.js; popdnpm install -g tslint",
+        "start": "pushd build; node index.js; popd",
+        "lint": "tslint -p tsconfig.json",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^12.12.7"
+    }
+}

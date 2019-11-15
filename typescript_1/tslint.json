@@ -1,0 +1,9 @@
+{
+    "rules": {
+        "quotemark": [true, "double"],
+        "semicolon": [true],
+        "align": true,
+        "encoding": true,
+        "no-any": false
+    }
+}
