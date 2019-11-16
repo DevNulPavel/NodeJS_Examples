@@ -1,6 +1,6 @@
 "use strict";
 
-const fs = require("fs");
+//const fs = require("fs");
 const child_process = require("child_process");
 
 const ALTOOL_PATH = "/Applications/Xcode.app/Contents/Applications/Application Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Support/altool";
@@ -46,10 +46,10 @@ async function uploadToIOSAppStore(user, pass, ipaFilePath){
         toolProcess.stdout.on("data", (message)=>{
             result = Buffer.concat([result, message]);
         });
-        toolProcess.stderr.on("data", (data) => {
+        toolProcess.stderr.on("data", (message) => {
             result = Buffer.concat([result, message]);
         });
-        toolProcess.on("close", (code, signal)=>{
+        toolProcess.on("close", (code)=>{
             //console.log(code);
             //console.log(result);
             const text = result.slice(0, -1).toString();
@@ -65,5 +65,5 @@ async function uploadToIOSAppStore(user, pass, ipaFilePath){
 
 module.exports = {
     uploadToIOSAppStore
-}
+};
 

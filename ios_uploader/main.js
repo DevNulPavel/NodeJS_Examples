@@ -3,7 +3,7 @@
 const fs = require("fs");
 const util = require("util");
 const readline = require("readline");
-const commander = require("commander")
+const commander = require("commander");
 const uploader = require("./uploader");
 
 
