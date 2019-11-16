@@ -49,5 +49,15 @@ console.log(testInterface(testObject1));
 const fileStats = fs.statSync(__filename);
 console.log(fileStats);
 
+let testStr1 = "test1";
+let testStr2 = "test1";
+let testStr3 = testStr1;
+let testStr4 = "";
+Object.assign(testStr4, testStr3);
+if(testStr3 === testStr4){
+    console.log("Equal");
+}else{
+    console.log("Not equal");
+}
 
 process.exit(0);

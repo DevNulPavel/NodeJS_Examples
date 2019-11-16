@@ -8,7 +8,7 @@
 const fs = require("fs");
 const util = require("util");
 const readline = require("readline");
-const commander = require("commander")
+const commander = require("commander");
 const google_auth = require("./google_auth");
 const uploader = require("./uploader");
 
@@ -45,11 +45,11 @@ async function main(){
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Парсим аргументы коммандной строки, https://github.com/tj/commander.js
-    const commaSeparatedList = (value, dummyPrevious) => {
+    const commaSeparatedList = (value) => {
         return value.split(",").filter((val)=>{
             return val.length > 0;
         });
-    }
+    };
     commander.requiredOption("-i, --input_files <comma_separeted_files_path>", "Input files for uploading: -i 'file1','file2'", commaSeparatedList);
     commander.requiredOption("-t, --target_folder_id <folder_id>", "Target Google drive folder ID");
     commander.parse(process.argv);

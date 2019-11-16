@@ -1,0 +1,42 @@
+{
+    "env": {
+        "commonjs": true,
+        "es6": true,
+        "node": true
+    },
+    "extends": "eslint:recommended",
+    "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly"
+    },
+    "parserOptions": {
+        "ecmaVersion": 2018
+    },
+    "rules": {
+        "no-tabs": "error",
+        "no-use-before-define": "error",
+        "require-await": "error",
+        "strict":"error",
+        "no-var":"error",
+        "eqeqeq":"error",
+        "camelcase": "warn",
+        "prefer-const": "error",
+        "no-const-assign": "error",
+        "indent": [
+            "error",
+            4
+        ],
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "quotes": [
+            "error",
+            "double"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ]
+    }
+}

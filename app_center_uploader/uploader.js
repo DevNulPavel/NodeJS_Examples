@@ -178,12 +178,12 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, ne
 
 function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath){
     // Можем грузить символы или нет?
-    const needSymbolsUploading = (path.extname(buildFilePath) == ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) == ".zip");
+    const needSymbolsUploading = (path.extname(buildFilePath) === ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) === ".zip");
     return needSymbolsUploading;    
 }
 
 module.exports = {
     uploadToHockeyApp,
     isSymbolsUploadingSupported
-}
+};
 

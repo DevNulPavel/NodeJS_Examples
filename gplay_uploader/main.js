@@ -53,7 +53,7 @@ async function main(){
 
     let progressCb = undefined;
     if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
-        let totalBytes = fs.statSync(inputFile);
+        const totalBytes = fs.statSync(inputFile);
         progressCb = (totalBytesProgress)=>{
             const progress = (totalBytesProgress / totalBytes) * 100;
             readline.clearLine(process.stdout, 0);

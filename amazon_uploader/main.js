@@ -1,7 +1,7 @@
 "use strict";
 
 const readline = require("readline");
-const commander = require("commander")
+const commander = require("commander");
 const uploader = require("./uploader");
 
 
@@ -18,9 +18,9 @@ async function main(){
     const appId = jsonData.app_id;*/
 
     // Пробуем получить из переменных окружения данные для авторизации
-    let clientId = process.env["AMAZON_CLIENT_ID"];
-    let clientSecret = process.env["AMAZON_CLIENT_SECRET"];
-    let appId = process.env["AMAZON_APP_ID"];
+    const clientId = process.env["AMAZON_CLIENT_ID"];
+    const clientSecret = process.env["AMAZON_CLIENT_SECRET"];
+    const appId = process.env["AMAZON_APP_ID"];
     if (!clientId || !clientSecret || !appId){
         throw Error("Missing enviroment variables");
         //console.error("Missing enviroment variables");

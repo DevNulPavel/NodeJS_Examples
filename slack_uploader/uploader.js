@@ -8,7 +8,7 @@ const MAX_UPLOADS_COUNT = 4;
 
 
 async function uploadFileToSlack(defaultRequest, filePath, progressCb){
-    const fileStream = fs.createReadStream(filePath)
+    const fileStream = fs.createReadStream(filePath);
     if (progressCb) {
         fileStream.on("data", (chunk) => {
             progressCb(chunk.length);
@@ -80,5 +80,5 @@ async function sendMessageToSlack(apiToken, slackChannel, message){
 module.exports = {
     uploadFilesToSlack,
     sendMessageToSlack
-}
+};
 

@@ -32,8 +32,8 @@ async function requestEditId(defaultRequest){
 
     // POST для создания, GET для получения уже имеющегося
     // Запускаем одновременно два запроса, смотрим где будет ответ, ошибки отлавливаем здвесь же в промисах
-    const editPostProm = editsDefaultRequest.post().catch((err)=>{ /*console.log("POST failed");*/ });
-    const editGetProm = editsDefaultRequest.get().catch((err)=>{ /*console.log("GET failed");*/ });
+    const editPostProm = editsDefaultRequest.post().catch(()=>{ /*console.log("POST failed");*/ });
+    const editGetProm = editsDefaultRequest.get().catch(()=>{ /*console.log("GET failed");*/ });
 
     let editId = undefined;
     const [editPostRes, editGetRes] = await Promise.all([editPostProm, editGetProm]);

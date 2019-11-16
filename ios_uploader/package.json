@@ -9,7 +9,6 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "commander": "^4.0.1",
-        "eslint": "^6.6.0"
+        "commander": "^4.0.1"
     }
 }

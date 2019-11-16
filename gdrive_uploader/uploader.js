@@ -128,7 +128,7 @@ async function uploadFile(drive, parentFolder, filePath, progressCb){
             const diff = event.bytesRead - prevUploadedVal;
             prevUploadedVal = event.bytesRead;
             progressCb(diff);
-        }
+        };
         createMethodParams["onUploadProgress"] = localProgressCb;
     }
     const uploadResult = await drive.files.create(createParams, createMethodParams);
@@ -208,7 +208,7 @@ async function uploadWithAuth(authClient, targetFolderId, filesForUploading, pro
     console.log(`Folders deleted from drive: ${foldersDeleted}`);*/
 
     // Создаем новую подпапку
-    const newFolderName = (new Date()).toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    const newFolderName = (new Date()).toISOString().replace(/T/, " ").replace(/\..+/, "");
     const newFolderId = await createFolder(drive, targetFolderId, newFolderName);
 
     // Выполняем отгрузку
