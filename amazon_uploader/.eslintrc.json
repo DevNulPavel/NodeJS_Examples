@@ -5,7 +5,9 @@
         "node": true
     },
     "plugins": [
-        "promise"
+        "promise",
+        "node",
+        "typelint"
     ],
     "extends": [
         "eslint:recommended",

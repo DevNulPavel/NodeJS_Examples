@@ -9,8 +9,7 @@ const uploader = require("./uploader");
 //https://googleapis.dev/nodejs/googleapis/latest/androidpublisher/classes/Resource$Edits$Apks-1.html#upload
 //https://stackoverflow.com/questions/48274009/cant-upload-apk-to-google-play-developer-via-publisher-api
 
-
-async function main(){    
+async function main() {
     // TODO: Тестовый код для получения параметров аутентификации из файлика
     /*const jsonData = require("./keys_prod_island2_2.json");
     const clientId = jsonData.client_id;
@@ -21,7 +20,7 @@ async function main(){
     const clientId = process.env["AMAZON_CLIENT_ID"];
     const clientSecret = process.env["AMAZON_CLIENT_SECRET"];
     const appId = process.env["AMAZON_APP_ID"];
-    if (!clientId || !clientSecret || !appId){
+    if (!clientId || !clientSecret || !appId) {
         throw Error("Missing enviroment variables");
         //console.error("Missing enviroment variables");
         //return;
@@ -40,10 +39,10 @@ async function main(){
     const packageName = "com.gameinsight.gplay.mmanor";*/
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     let progressCb = undefined;
-    if(process.stdout.isTTY){ // Нужен ли интерактивный режим?
-        progressCb = (progress)=>{
+    if (process.stdout.isTTY) { // Нужен ли интерактивный режим?
+        progressCb = (progress) => {
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
