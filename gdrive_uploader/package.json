@@ -12,5 +12,10 @@
     "dependencies": {
         "commander": "^4.0.1",
         "googleapis": "^45.0.0"
+    },
+    "devDependencies": {
+        "eslint": "^6.6.0",
+        "eslint-plugin-node": "^10.0.0",
+        "eslint-plugin-promise": "^4.2.1"
     }
 }

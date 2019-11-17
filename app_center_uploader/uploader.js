@@ -173,7 +173,7 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, ne
         promises.push(symbolsUploadProm);
     }
 
-    return Promise.all(promises);
+    return await Promise.all(promises);
 }
 
 function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath){

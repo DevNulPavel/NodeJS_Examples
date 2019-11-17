@@ -125,7 +125,7 @@ async function valiateChanges(defaultEditRequest){
         url: "/validate",
         method: "POST",
         json: true
-    })
+    });
     return resp;
 }
 
@@ -137,7 +137,7 @@ async function commitChanges(defaultEditRequest, etag){
         headers: {
             "If-Match": etag
         }
-    })
+    });
     return commitResp;
 }
 
@@ -149,7 +149,7 @@ async function deleteEditId(defaultEditRequest, etag){
         headers: {
             "If-Match": etag
         }
-    })
+    });
     return finishResp;
 }
 

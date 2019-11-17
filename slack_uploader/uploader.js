@@ -48,6 +48,7 @@ async function uploadFilesToSlack(apiToken, slackChannel, filesPaths, progressCb
     for(let i = 0; i < filesPaths.length; i++){
         const uploadProm = uploadFileToSlack(defaultReq, filesPaths[i], uploadProgressCb);
         promises.add(uploadProm);
+        // eslint-disable-next-line promise/catch-or-return
         uploadProm.finally(()=>{
             promises.delete(uploadProm);
         });

@@ -41,7 +41,7 @@ async function requestFilesList(drive){
             const file = files[i];
             const fileType = file.mimeType;
             //console.log(file);
-            if(fileType == "application/vnd.google-apps.folder"){
+            if(fileType === "application/vnd.google-apps.folder"){
                 folderIds.push(file.id);
             }else{
                 fileIds.push(file.id);
@@ -64,6 +64,9 @@ async function deleteFiles(drive, fileIds){
         };
         const deleteProm = drive.files.delete(deleteParams);
         promises.add(deleteProm);
+        deleteProm.catch(()=>{
+        });
+        // eslint-disable-next-line promise/catch-or-return
         deleteProm.finally(()=>{         // Вызывается после then, позволяет удалить promise
             promises.delete(deleteProm);
         });
@@ -156,6 +159,7 @@ async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb)
 
         const uploadInfoProm = uploadFile(drive, parentFolderId, fileForUploading, createProgressCallback);
         promises.add(uploadInfoProm);
+        // eslint-disable-next-line promise/catch-or-return
         uploadInfoProm.finally(()=>{         // Вызывается после then, позволяет удалить promise
             promises.delete(uploadInfoProm);
         });

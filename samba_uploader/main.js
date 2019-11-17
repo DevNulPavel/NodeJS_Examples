@@ -71,8 +71,8 @@ async function main(){
         };
     }
     const uploadResults = await uploader.uploadToSamba(serverName, user, pass, keyFilePath, serverDir, filePaths, appName, appVersion, progressCb);
-    //console.log("");
-    //console.log(uploadResults);
+    console.log("");
+    console.log(uploadResults);
 }
 
 main();

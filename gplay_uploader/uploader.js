@@ -38,14 +38,14 @@ async function startInsert(publisher){
 async function uploadBuild(publisher, editId, uploadFile, progressCb){
     // Выбираем тип отгрузки
     let uploadModule;
-    let mimeType;
+    //let mimeType;
     const fileExt = path.extname(uploadFile);
-    if (fileExt == "aab"){
+    if (fileExt === "aab"){
         uploadModule = publisher.edits.bundles;
-        mimeType = "application/octet-stream";
-    }else if(fileExt == "apk"){
+        //mimeType = "application/octet-stream";
+    }else if(fileExt === "apk"){
         uploadModule = publisher.edits.apks;
-        mimeType = "application/vnd.android.package-archive";
+        //mimeType = "application/vnd.android.package-archive";
     }else{
         throw new Error("Invalid file extention");
     }
@@ -63,12 +63,12 @@ async function uploadBuild(publisher, editId, uploadFile, progressCb){
     };
     const methodParams = {};
     if(progressCb){
-        const totalBytesLoaded = 0;;
+        let totalBytesLoaded = 0;
         const localProgressCb = (event)=>{
             totalBytesLoaded += event.bytesRead;
             progressCb(totalBytesLoaded);
         };
-        methodParams[onUploadProgress] = localProgressCb;
+        methodParams.onUploadProgress = localProgressCb;
     }
     const uploadResult = await uploadModule.upload(uploadParams, methodParams);
     const uploadedVersion = uploadResult.data.versionCode;
