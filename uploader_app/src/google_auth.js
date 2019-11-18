@@ -15,7 +15,6 @@ async function createAuthClientFromFile(keyFile, scopes){
     };
     const auth = new googleapis.google.auth.GoogleAuth(authOptions);
     const authClient = await auth.getClient();
-    //console.log(authClient);
 
     // Авторизуемся
     const сredentials = await authClient.authorize();
@@ -36,7 +35,6 @@ async function createAuthClientFromInfo(email, keyId, key, scopes){
         //additionalClaims?: {};
     };
     const authClient = new googleapis.google.auth.JWT(authOptions);
-    //console.log(authClient);
 
     // Авторизуемся
     const сredentials = await authClient.authorize();

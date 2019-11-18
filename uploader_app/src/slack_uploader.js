@@ -6,7 +6,6 @@ const request = require("request-promise-native");
 
 const MAX_UPLOADS_COUNT = 4;
 
-
 async function uploadFileToSlack(defaultRequest, filePath, progressCb){
     const fileStream = fs.createReadStream(filePath);
     if (progressCb) {

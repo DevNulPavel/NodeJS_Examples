@@ -16,7 +16,7 @@ function createDriveObject(authClient){
     return drive;
 }
 
-async function requestFilesList(drive){
+/*async function requestFilesList(drive){
     // Запрашиваем список файлов текущих
     const listParams = {
         //auth: authClient,
@@ -49,9 +49,9 @@ async function requestFilesList(drive){
         }
     }
     return {fileIds, folderIds};
-}
+}*/
 
-async function deleteFiles(drive, fileIds){
+/*async function deleteFiles(drive, fileIds){
     // Удаляем все файлы c ограничением максимального количества запросов
     const MAX_REQ_COUNT = 5;
     let totalFilesDeleted = 0;
@@ -79,7 +79,7 @@ async function deleteFiles(drive, fileIds){
     }
     await Promise.all(promises);
     return totalFilesDeleted;
-}
+}*/
 
 async function createFolder(drive, parentFolder, newFolderName){
     // Пример создания папки
@@ -136,7 +136,7 @@ async function uploadFile(drive, parentFolder, filePath, progressCb){
     }
     const uploadResult = await drive.files.create(createParams, createMethodParams);
     uploadResult.data.srcFilePath = fileName;
-    //console.log(uploadResult.data);
+    
     return uploadResult.data;
 }
 
@@ -162,29 +162,8 @@ async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb)
     }
     const finalCompletedValues = await Promise.all(promises);
     uploadResults = uploadResults.concat(finalCompletedValues);
-    //console.log(uploadResults);
+    
     return uploadResults;
-}
-
-async function otherExamples(){
-    /*const exportConfig = {
-        auth: authClient,
-        fileId: uploadedFileId,
-        mimeType: 'text/javascript'
-    };
-    const exportRes = await drive.files.export(exportConfig);
-    console.log(exportRes.data);*/
-
-    // Запрос информации
-    /*const getParams = {
-        auth: authClient,
-        fileId: uploadedFileId,
-        fields: "id, parents, name, kind, size, mimeType, webContentLink, webViewLink" // https://developers.google.com/drive/api/v3/
-    }
-    const getRes = await drive.files.get(getParams);
-    //console.log(getRes.data);
-    console.log(`Download url: ${getRes.data.webContentLink}`);
-    console.log(`Web view url: ${getRes.data.webViewLink}`);*/   
 }
 
 async function uploadWithAuth(authClient, targetFolderId, filesForUploading, progressCb){

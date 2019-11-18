@@ -120,20 +120,25 @@ async function uploadBuildWithAuth(authClient, packageName, uploadFile, targetTr
     console.log(`Edit id: ${editId}`);
 
     // Старт загрузки
-    //const uploadedVersion = await uploadBuild(publisher, editId, uploadFile, progressCb);
+    const uploadedVersion = await uploadBuild(publisher, editId, uploadFile, progressCb);
 
     // Обновляем track
-    //const updateTrackRes = await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack);
+    const updateTrackRes = await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack);
+    console.log("Update track res:", updateTrackRes);
 
     // TODO: нужен ли вызов валидации?
     const validateResult = await validateParams(publisher, editId);
     console.log("Validate res:", validateResult);
 
     // Коммитим изменения
-    //const commitRes = await commitChanges(publisher, editId);
+    const commitRes = await commitChanges(publisher, editId);
+
+    return commitRes;
 }
 
-module.exports.uploadBuildWithAuth = uploadBuildWithAuth;
+module.exports = {
+    uploadBuildWithAuth
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -56,7 +56,7 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, param
         // TODO: Вынести в отдельную функцию
         const onReadyFunc = async ()=>{
             let serverDir = paramServerDir;
-            //console.log("Auth success");
+            
             try{
                 // Если путь относительно домашней папки, то надо обновить путь до абсолютного
                 if(serverDir.startsWith("~")){
@@ -78,15 +78,12 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, param
     
                 const execFunc = util.promisify(client.exec.bind(client));
                 await execFunc(`mkdir -p ${serverDir}`);
-                //console.log("mkdir success");
         
                 const sftpFunc = util.promisify(client.sftp.bind(client));
                 
                 const sftp = await sftpFunc();
                 const fastPutFunc = util.promisify(sftp.fastPut.bind(sftp));
-        
-                //console.log("SFTP success");
-        
+                
                 let uploadConfig = undefined;
                 if(progressCb){
                     const fileUploadProgressCb = (totalTransfered, chunkSize)=>{
@@ -97,18 +94,13 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, param
                     };
                 }
         
-                //console.log("Upload start");
-        
                 for(let i = 0; i < filePaths.length; i++){
                     const localFilePath = filePaths[i];
-                    //console.log("Start", localFilePath);
                     const fileName = path.basename(localFilePath);
                     const remoteFilePath = path.join(serverDir, fileName);
                     await fastPutFunc(localFilePath, remoteFilePath, uploadConfig);
-                    //console.log("End", localFilePath);
                 }
         
-                //console.log("Upload end");
                 resolve();
             }finally{
                 client.end();
@@ -124,8 +116,6 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, param
             port: 22,
             username: user
         };
-        //console.log(pass);
-        //console.log(keyFilePath);
         if(pass && (pass.length > 0)){
             connectConfig.password = pass;
         }else if(keyFilePath && (keyFilePath.length > 0)){

@@ -8,7 +8,7 @@ const request = require("request-promise-native");
 //https://docs.microsoft.com/en-us/appcenter/diagnostics/ios-symbolication
 //https://github.com/microsoft/appcenter/issues/965
 
-async function requestUserInfo(defaultRequest){
+/*async function requestUserInfo(defaultRequest){
     const user = await defaultRequest({
         url: "/user",
         method: "GET",
@@ -16,9 +16,9 @@ async function requestUserInfo(defaultRequest){
     });
     //console.log(user);
     return user;
-}
+}*/
 
-async function requestAppsList(defaultRequest){
+/*async function requestAppsList(defaultRequest){
     const apps = await defaultRequest({
         url: "/apps",
         method: "GET",
@@ -26,8 +26,7 @@ async function requestAppsList(defaultRequest){
     });
     //console.log(apps);
     return apps;
-}
-
+}*/
 
 async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath, progressCb) {
     const uploadInfo = await defaultRequest({
@@ -42,8 +41,6 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath,
     });
     const uploadId = uploadInfo.upload_id;
     const uploadUrl = uploadInfo.upload_url;
-    //console.log(uploadId);
-    //console.log(uploadUrl);
 
     // Отгружаем данные
     const fileStream = fs.createReadStream(buildFilePath);
@@ -69,16 +66,14 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath,
             "status": "committed"
         }
     });
-    //console.log(uploadCommitInfo);
-    // {
+    // Параметры в выводе
     //     release_id: '17',
     //     release_url: 'v0.1/apps/Game-Insight-HQ-Organization/QC-Paradise-Island-2-Android/releases/17'
-    // }
 
     return uploadCommitInfo;
 }
 
-async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFilePath, progressCb){
+async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFilePath, progressCb) {
     // Получаем URL для отгрузки в центр
     const uploadInfo = await defaultRequest({
         url: `/apps/${appOwnerName}/${appName}/symbol_uploads`,
@@ -95,8 +90,6 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
     });
     const symbolsUploadId = uploadInfo.symbol_upload_id;
     const symbolsUploadUrl = uploadInfo.upload_url;
-    //console.log(symbolsUploadId);
-    //console.log(symbolsUploadUrl);
 
     // Отгружаем данные
     const fileStream = fs.createReadStream(symbolsFilePath);
@@ -108,7 +101,7 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
     await request({
         url: symbolsUploadUrl,
         method: "PUT",
-        headers:{
+        headers: {
             "x-ms-blob-type": "BlockBlob"
         }
     });
@@ -122,12 +115,11 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
             "status": "committed"
         }
     });
-    //console.log(uploadCommitInfo);
 
     return uploadCommitInfo;
 }
 
-async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, needSymbolsUploading, symbolsFilePath, progressCb){
+async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, needSymbolsUploading, symbolsFilePath, progressCb) {
     // Базовый конфиг запроса
     const defaultRequest = request.defaults({
         baseUrl: "https://api.appcenter.ms/v0.1",
@@ -135,18 +127,16 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, ne
             "X-API-Token": token
         }
     });
-    
+
     // Промисы для ожидания результата
     const promises = [];
 
     // Грузим билд на сервер
-    //console.log("Build upload start");
     const uploadBuildProm = uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath, progressCb);
     promises.push(uploadBuildProm);
 
     // Грузим символы на сервер
-    if(needSymbolsUploading){
-        //console.log("Symbol upload start");
+    if (needSymbolsUploading) {
         const symbolsUploadProm = uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFilePath, progressCb);
         promises.push(symbolsUploadProm);
     }
@@ -154,10 +144,10 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, ne
     return await Promise.all(promises);
 }
 
-function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath){
+function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath) {
     // Можем грузить символы или нет?
     const needSymbolsUploading = (path.extname(buildFilePath) === ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) === ".zip");
-    return needSymbolsUploading;    
+    return needSymbolsUploading;
 }
 
 module.exports = {

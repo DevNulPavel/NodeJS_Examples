@@ -18,6 +18,10 @@ export SSH_PRIVATE_KEY_PATH=""
 export SLACK_API_TOKEN=""
 export SLACK_CHANNEL=""
 
+# Amazon
+# node main.js \
+#     --amazon_input_file "Island2-arm32-amazon-11.15.0-314-12112019_1749-821dc9f0.apk"
+
 # GDrive
 # node main.js \
 #     --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
@@ -37,10 +41,11 @@ export SLACK_CHANNEL=""
 #     --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa"
 
 # All
-node main.js \
-    --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
-    --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
-    --ssh_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
-    --ssh_target_server_dir "~/test_dir" \
-    --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
-    --slack_upload_files "/Users/devnul/Desktop/logs.txt","/Users/devnul/Desktop/Island2.js"
+# node main.js \
+#     --amazon_input_file "Island2-arm32-amazon-11.15.0-314-12112019_1749-821dc9f0.apk" \
+#     --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
+#     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
+#     --ssh_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
+#     --ssh_target_server_dir "~/test_dir" \
+#     --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
+#     --slack_upload_files "/Users/devnul/Desktop/logs.txt","/Users/devnul/Desktop/Island2.js"

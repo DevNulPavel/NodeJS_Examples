@@ -39,10 +39,7 @@ async function requestEditId(defaultRequest) {
     });
 
     let editId = undefined;
-    const [editPostRes, editGetRes] = await Promise.all([
-        editPostProm,
-        editGetProm
-    ]);
+    const [editPostRes, editGetRes] = await Promise.all([editPostProm, editGetProm]);
     if (editPostRes) {
         editId = editPostRes.id;
     } else if (editGetRes) {
@@ -56,6 +53,7 @@ async function requestEditId(defaultRequest) {
     return editId;
 }
 
+// eslint-disable-next-line no-unused-vars
 async function getApksList(defaultEditRequest) {
     const apksList = await defaultEditRequest({
         url: "/apks",
@@ -105,7 +103,7 @@ async function uploadNewApk(defaultEditRequest, filePath, progressCb) {
     return uploadResultJson;
 }
 
-async function updateListing() {
+/*async function updateListing() {
     // listing_headers = headers.copy()
     // listing_headers.update({
     //     'Content-Type': 'application/json'
@@ -118,18 +116,18 @@ async function updateListing() {
     //     'If-Match': listings_etag
     // })
     // edit_listing_response = update_listing(app_id, edit_id, language, edit_body, edit_listing_headers)
-}
+}*/
 
-async function valiateChanges(defaultEditRequest) {
+/*async function valiateChanges(defaultEditRequest) {
     const resp = await defaultEditRequest({
         url: "/validate",
         method: "POST",
         json: true
     });
     return resp;
-}
+}*/
 
-async function commitChanges(defaultEditRequest, etag) {
+/*async function commitChanges(defaultEditRequest, etag) {
     const commitResp = await defaultEditRequest({
         url: "/commit",
         method: "POST",
@@ -139,9 +137,9 @@ async function commitChanges(defaultEditRequest, etag) {
         }
     });
     return commitResp;
-}
+}*/
 
-async function deleteEditId(defaultEditRequest, etag) {
+/*async function deleteEditId(defaultEditRequest, etag) {
     const finishResp = await defaultEditRequest({
         url: "/",
         method: "DELETE",
@@ -151,7 +149,7 @@ async function deleteEditId(defaultEditRequest, etag) {
         }
     });
     return finishResp;
-}
+}*/
 
 async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, progressCb) {
     // Запрашиваем токен
@@ -167,7 +165,6 @@ async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, prog
 
     // Запрашиваем id редактирования
     const editId = await requestEditId(defaultRequest);
-    //console.log(editId);
 
     // Создаем базовый запрос, но уже со списком
     const defaultEditRequest = defaultRequest.defaults({
@@ -176,7 +173,6 @@ async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, prog
 
     // Выполняем отгрузку на сервер
     const uploadResults = await uploadNewApk(defaultEditRequest, filePath, progressCb);
-    //console.log(uploadResults);
 
     return uploadResults;
 

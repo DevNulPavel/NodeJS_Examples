@@ -50,8 +50,6 @@ async function uploadToIOSAppStore(user, pass, ipaFilePath){
             result = Buffer.concat([result, message]);
         });
         toolProcess.on("close", (code)=>{
-            //console.log(code);
-            //console.log(result);
             const text = result.slice(0, -1).toString();
             if (code === 0){
                 resolve(text);
