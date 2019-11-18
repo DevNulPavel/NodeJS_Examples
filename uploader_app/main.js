@@ -192,9 +192,12 @@ async function main() {
     const appCenterAccessToken = process.env["APP_CENTER_ACCESS_TOKEN"];
     const appCenterAppName = process.env["APP_CENTER_APP_NAME"];
     const appCenterAppOwnerName = process.env["APP_CENTER_APP_OWNER_NAME"];
-    const googleEmail = process.env["GOOGLE_SERVICE_EMAIL"];
-    const googleKeyId = process.env["GOOGLE_KEY_ID"];
-    const googleKeyRaw = process.env["GOOGLE_KEY"];
+    const googlePlayEmail = process.env["GOOGLE_PLAY_SERVICE_EMAIL"];
+    const googlePlayKeyId = process.env["GOOGLE_PLAY_KEY_ID"];
+    const googlePlayKeyRaw = process.env["GOOGLE_PLAY_KEY"];
+    const googleDriveEmail = process.env["GOOGLE_DRIVE_SERVICE_EMAIL"];
+    const googleDriveKeyId = process.env["GOOGLE_DRIVE_KEY_ID"];
+    const googleDriveKeyRaw = process.env["GOOGLE_DRIVE_KEY"];
     const iosUser = process.env["IOS_USER"]; // TODO: Можно ли передавать так?
     const iosPass = process.env["IOS_PASS"]; // TODO: Можно ли передавать так?
     const sshServerName = process.env["SSH_SERVER"];
@@ -205,7 +208,8 @@ async function main() {
     const slackChannel = process.env["SLACK_CHANNEL"];
 
     // Фиксим данные из окружения
-    const googleKey = replaceAllInString(googleKeyRaw, "\\n", "\n");
+    const googlePlayKey = replaceAllInString(googlePlayKeyRaw, "\\n", "\n");
+    const googleDriveKey = replaceAllInString(googleDriveKeyRaw, "\\n", "\n");
 
     //////////////////////////////////////////////////////////////////////////////
 
@@ -289,13 +293,13 @@ async function main() {
 
     // Google drive
     if(googleDriveFiles){
-        const uploadProm = uploadInGDrive(googleEmail, googleKeyId, googleKey, googleDriveFiles, googleDriveFolderId);
+        const uploadProm = uploadInGDrive(googleDriveEmail, googleDriveKeyId, googleDriveKey, googleDriveFiles, googleDriveFolderId);
         allPromises.add(uploadProm);
     }
 
     // Google play
     if(googlePlayUploadFile){
-        const uploadProm = uploadInGPlay(googleEmail, googleKeyId, googleKey, googlePlayUploadFile, googlePlayTargetTrack, googlePlayPackageName);
+        const uploadProm = uploadInGPlay(googlePlayEmail, googlePlayKeyId, googlePlayKey, googlePlayUploadFile, googlePlayTargetTrack, googlePlayPackageName);
         allPromises.add(uploadProm);
     }
 

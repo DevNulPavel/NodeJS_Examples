@@ -4,14 +4,19 @@ const fs = require("fs");
 const path = require("path");
 const googleapis = require("googleapis");
 
-function createDriveObject(authClient){
+
+// https://developers.google.com/drive/api/v3/reference
+// https://webapps.stackexchange.com/questions/42999/how-can-i-recursively-set-ownership-of-google-drive-files-and-folders
+// https://github.com/davidstrauss/google-drive-recursive-ownership/blob/master/transfer.py
+
+
+function createDriveObject(authClient) {
     // Создаем объект drive
     const driveConfig = {
         version: "v3",
         auth: authClient
     };
     const drive = googleapis.google.drive(driveConfig);
-    //console.dir(drive);
 
     return drive;
 }
@@ -81,7 +86,7 @@ function createDriveObject(authClient){
     return totalFilesDeleted;
 }*/
 
-async function createFolder(drive, parentFolder, newFolderName){
+async function createFolder(drive, parentFolder, newFolderName) {
     // Пример создания папки
     const createFolderParams = {
         //auth: authClient,
@@ -103,7 +108,7 @@ async function createFolder(drive, parentFolder, newFolderName){
     return newFolderId;
 }
 
-async function uploadFile(drive, parentFolder, filePath, progressCb){
+async function uploadFile(drive, parentFolder, filePath, progressCb) {
     // Пример отгрузки файлика
     const fileName = path.basename(filePath);
     const fileStream = fs.createReadStream(filePath); //var apk = require('fs').readFileSync('./Chronicled.apk');
@@ -125,9 +130,9 @@ async function uploadFile(drive, parentFolder, filePath, progressCb){
         //requestBody?: Schema$File; // Request body metadata
     };
     const createMethodParams = {};
-    if(progressCb){
+    if (progressCb) {
         let prevUploadedVal = 0;
-        const localProgressCb = (event)=>{
+        const localProgressCb = (event) => {
             const diff = event.bytesRead - prevUploadedVal;
             prevUploadedVal = event.bytesRead;
             progressCb(diff);
@@ -136,37 +141,41 @@ async function uploadFile(drive, parentFolder, filePath, progressCb){
     }
     const uploadResult = await drive.files.create(createParams, createMethodParams);
     uploadResult.data.srcFilePath = fileName;
-    
+
     return uploadResult.data;
 }
 
-async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb){
+async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb) {
     // Непосредственно процесс отгрузки
     const MAX_REQ_COUNT = 5;
     const promises = new Set();
     let uploadResults = [];
-    for(let i = 0; i < filesForUploading.length; i++){
+    for (let i = 0; i < filesForUploading.length; i++) {
         const fileForUploading = filesForUploading[i];
 
         const uploadInfoProm = uploadFile(drive, parentFolderId, fileForUploading, progressCb);
         promises.add(uploadInfoProm);
         // eslint-disable-next-line promise/catch-or-return
-        uploadInfoProm.finally(()=>{         // Вызывается после then, позволяет удалить promise
+        uploadInfoProm.finally(() => {         // Вызывается после then, позволяет удалить promise
             promises.delete(uploadInfoProm);
         });
 
-        if (promises.size > MAX_REQ_COUNT){
+        if (promises.size > MAX_REQ_COUNT) {
             const uploadInfo = await Promise.race(promises);
             uploadResults.push(uploadInfo);
-        }       
+        }
     }
     const finalCompletedValues = await Promise.all(promises);
     uploadResults = uploadResults.concat(finalCompletedValues);
-    
+
     return uploadResults;
 }
 
-async function uploadWithAuth(authClient, targetFolderId, filesForUploading, progressCb){
+async function switchOwner(drive, fileId) {
+
+}
+
+async function uploadWithAuth(authClient, targetFolderId, filesForUploading, progressCb) {
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 
@@ -188,6 +197,36 @@ async function uploadWithAuth(authClient, targetFolderId, filesForUploading, pro
 
     // Выполняем отгрузку
     const uploadResults = await uploadFiles(drive, newFolderId, filesForUploading, progressCb);
+    //console.log(uploadResults);
+
+    /////////////////////////////////////////////////////////////////////////////////
+
+    const uploadedFileIds = uploadResults.map((info) => {
+        return info.id;
+    });
+    //console.log(uploadedFileIds);
+    
+    for (let i = 0; i < uploadedFileIds.length; i++) {
+        const fileId = uploadedFileIds[i];
+        const results = await drive.permissions.list({
+            fileId: fileId
+        });
+        console.log(results.data.permissions);
+        for(let j = 0; j < results.data.permissions.length; j++){
+            const permission = results.data.permissions[j];
+            if(permission.role === "owner"){
+                const results = await drive.permissions.update({
+                    fileId: fileId,
+                    permissionId: permission.id,
+                    transferOwnership: true,
+                    requestBody:{
+                        role: "owner"
+                    }
+                });
+                console.log(results.data);
+            }
+        }
+    }
 
     return uploadResults;
 }
