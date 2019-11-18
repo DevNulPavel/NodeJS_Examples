@@ -47,7 +47,7 @@ client.exec(`mkdir -p ${serverDir}`, (err, chan)=>{
 });
 return;*/
 
-async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, serverDir, progressCb){
+async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, paramServerDir, progressCb){
     //console.log(arguments);
     const resultProm = new Promise((resolve, reject)=>{
         const client = new ssh2.Client();
@@ -55,6 +55,7 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, serve
         // Убработчик успешного подключения
         // TODO: Вынести в отдельную функцию
         const onReadyFunc = async ()=>{
+            let serverDir = paramServerDir;
             //console.log("Auth success");
             try{
                 // Если путь относительно домашней папки, то надо обновить путь до абсолютного
@@ -109,8 +110,6 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, serve
         
                 //console.log("Upload end");
                 resolve();
-            }catch(err){
-                reject(err);
             }finally{
                 client.end();
             }
