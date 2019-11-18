@@ -17,7 +17,7 @@ function createPublisher(authClient, packageName){
         params: {
             packageName: packageName
         }
-    }
+    };
     const publisher = googleapis.google.androidpublisher(publisherParams);
 
     return publisher;
@@ -63,10 +63,8 @@ async function uploadBuild(publisher, editId, uploadFile, progressCb){
     };
     const methodParams = {};
     if(progressCb){
-        let totalBytesLoaded = 0;
         const localProgressCb = (event)=>{
-            totalBytesLoaded += event.bytesRead;
-            progressCb(totalBytesLoaded);
+            progressCb(event.bytesRead);
         };
         methodParams.onUploadProgress = localProgressCb;
     }
@@ -97,7 +95,7 @@ async function validateParams(publisher, editId){
         editId: editId,
         //auth: authClient,
         //packageName: packageName,
-    }
+    };
     const validateResult = await publisher.edits.validate(validateParams);
     //const validateId = validateResult.data.id;
     //console.log(validateResult.data);
@@ -119,7 +117,7 @@ async function uploadBuildWithAuth(authClient, packageName, uploadFile, targetTr
 
     // Запрашиваем editId для возможности редактирования
     const editId = await startInsert(publisher);
-    console.log(`Edit id: ${editId}`)
+    console.log(`Edit id: ${editId}`);
 
     // Старт загрузки
     //const uploadedVersion = await uploadBuild(publisher, editId, uploadFile, progressCb);

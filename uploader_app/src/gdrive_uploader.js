@@ -203,7 +203,8 @@ async function uploadWithAuth(authClient, targetFolderId, filesForUploading, pro
     console.log(`Folders deleted from drive: ${foldersDeleted}`);*/
 
     // Создаем новую подпапку
-    const newFolderName = (new Date()).toISOString().replace(/T/, " ").replace(/\..+/, "");
+    //const newFolderName = ().toISOString().replace(/T/, " ").replace(/\..+/, "");
+    const newFolderName = (new Date()).toLocaleString();
     const newFolderId = await createFolder(drive, targetFolderId, newFolderName);
 
     // Выполняем отгрузку

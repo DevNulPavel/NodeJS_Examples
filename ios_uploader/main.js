@@ -9,8 +9,8 @@ const uploader = require("./uploader");
 async function main() {
   // TODO: Тестовый код для получения параметров аутентификации из файлика
   const jsonData = require("./keys_test.json");
-  const user = jsonData.api_token;
-  const pass = jsonData.slack_channel;
+  const user = jsonData.user;
+  const pass = jsonData.pass;
 
   // Пробуем получить из переменных окружения данные для авторизации
   /*const accessToken = process.env["APP_CENTER_ACCESS_TOKEN"];

@@ -47,19 +47,19 @@ client.exec(`mkdir -p ${serverDir}`, (err, chan)=>{
 });
 return;*/
 
-async function uploadToSamba(serverName, user, pass, keyFilePath, serverDir, filePaths, appname, version, progressCb){
+async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, serverDir, progressCb){
     //console.log(arguments);
     const resultProm = new Promise((resolve, reject)=>{
         const client = new ssh2.Client();
     
         // Убработчик успешного подключения
-        let targetDir = serverDir;
         // TODO: Вынести в отдельную функцию
         const onReadyFunc = async ()=>{
             //console.log("Auth success");
             try{
                 // Если путь относительно домашней папки, то надо обновить путь до абсолютного
                 if(serverDir.startsWith("~")){
+                    // eslint-disable-next-line promise/param-names
                     const getHomeFolderProm = new Promise((localResolve, localReject)=>{
                         client.exec("echo ~$USER", (err, chan)=>{
                             chan.on("data", (data)=>{
@@ -72,11 +72,11 @@ async function uploadToSamba(serverName, user, pass, keyFilePath, serverDir, fil
                         });
                     });
                     const homeFolderPath = await getHomeFolderProm;
-                    targetDir = targetDir.replace("~", homeFolderPath);
+                    serverDir = serverDir.replace("~", homeFolderPath);
                 }
     
                 const execFunc = util.promisify(client.exec.bind(client));
-                await execFunc(`mkdir -p ${targetDir}`);
+                await execFunc(`mkdir -p ${serverDir}`);
                 //console.log("mkdir success");
         
                 const sftpFunc = util.promisify(client.sftp.bind(client));
@@ -88,10 +88,8 @@ async function uploadToSamba(serverName, user, pass, keyFilePath, serverDir, fil
         
                 let uploadConfig = undefined;
                 if(progressCb){
-                    let totalUploaded = 0;
                     const fileUploadProgressCb = (totalTransfered, chunkSize)=>{
-                        totalUploaded += chunkSize;
-                        progressCb(totalUploaded);
+                        progressCb(chunkSize);
                     };
                     uploadConfig = { 
                         step: fileUploadProgressCb 
@@ -142,6 +140,6 @@ async function uploadToSamba(serverName, user, pass, keyFilePath, serverDir, fil
 }
 
 module.exports = {
-    uploadToSamba
+    uploadBySSH
 };
 

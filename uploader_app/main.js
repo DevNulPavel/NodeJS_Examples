@@ -1,20 +1,41 @@
 "use strict";
 
 const fs = require("fs");
-const util = require("util");
+const path = require("path");
 const readline = require("readline");
 const commander = require("commander");
 const amazon_uploader = require("./src/amazon_uploader");
 const app_center_uploader = require("./src/app_center_uploader");
 const google_auth = require("./src/google_auth");
 const gdrive_uploader = require("./src/gdrive_uploader");
-// const gplay_uploader = require("./src/gplay_uploader");
-// const ios_uploader = require("./src/ios_uploader");
-// const samba_uploader = require("./src/samba_uploader");
-// const slack_uploader = require("./src/slack_uploader");
+const gplay_uploader = require("./src/gplay_uploader");
+const ios_uploader = require("./src/ios_uploader");
+const ssh_uploader = require("./src/ssh_uploader");
+const slack_uploader = require("./src/slack_uploader");
+
+
 
 let currentUploadedBytes = 0;
 let totalBytes = 0;
+
+const validateArgumentsLambda = (msg, args)=>{
+    for(let i = 0; i < args.length; i++){
+        if(args[i] === undefined){
+            throw Error(msg);
+        }
+    }
+};
+
+/*const debugPrintArgumentsLambda = (args)=>{
+    for(let i = 0; i < args.length; i++){
+        console.log(`${i}: ${args[i]}`);
+    }
+};*/
+
+function replaceAllInString(input, old, newVal){
+    const result = input.split(old).join(newVal);
+    return result;
+}
 
 function updateUploadProgress(bytesUploaded) {
     currentUploadedBytes += bytesUploaded;
@@ -31,20 +52,20 @@ async function calculateTotalUploadsSize(filesPaths){
     const allStats = await Promise.all(sizePromises);
     const bytesSize = allStats.reduce((prevVal, stat)=>{
         return prevVal + stat.size;
-    });
+    }, 0);
     return bytesSize;
 }
 
 async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile) {
-    if (!amazonClientId || !amazonClientSecret || !amazonAppId || !amazonInputFile) {
-        throw Error("Missing amazon input variables");
-    }
+    validateArgumentsLambda("Missing amazon input variables", arguments);
 
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
-    const uploadResults = await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
-    // TODO: Result message handle
-    return {};
+    await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
+
+    return {
+        message: `Uploaded to Amazon:\n${path.basename(amazonInputFile)}`
+    };
 }
 
 async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, inputFile, symbolsFile) {
@@ -56,7 +77,7 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
 
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
-    const uploadResults = await app_center_uploader.uploadToHockeyApp(
+    await app_center_uploader.uploadToHockeyApp(
         appCenterAccessToken, 
         appCenterAppName, 
         appCenterAppOwnerName, 
@@ -64,18 +85,22 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
         withSymbolsUploading, 
         symbolsFile, 
         progressCb); // Нужен ли интерактивный режим?
-    // TODO: Result message handle
-    return {};
+    
+    const message = withSymbolsUploading ? 
+        `Uploaded to App center:\n${path.basename(inputFile)}\n${path.basename(symbolsFile)}` : 
+        `Uploaded to App center:\n${path.basename(inputFile)}`;
+    return {
+        message: message
+    };
 }
 
 async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, targetFolderId){
-    if (!googleEmail || !googleKeyId || !googleKey || !inputFiles || !targetFolderId){
-        throw Error("Missing google enviroment variables");
-    }
+    validateArgumentsLambda("Missing google drive enviroment variables", arguments);
 
     // Создание аутентифицации из параметров
+    // https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
     const scopes = [
-        "https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением, https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
+        "https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
         //"https://www.googleapis.com/auth/drive",        // Работа со всеми файлами на диске
     ];
     const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
@@ -84,13 +109,70 @@ async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, t
 
     const uploadResults = await gdrive_uploader.uploadWithAuth(authClient, targetFolderId, inputFiles, progressCb);
     
-    /*for(let i = 0; i < uploadResults.length; i++){
+    // Сообщение в слак
+    let slackMessage = "Google drive links:\n";
+    for(let i = 0; i < uploadResults.length; i++){
         const uploadInfo = uploadResults[i];
+        slackMessage += `"${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}\n`;
         //console.log(`Download url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}`);
         //console.log(`Web view url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webViewLink}`); 
-    }*/
+    }
 
     // TODO: Result message handle
+    return {
+        message: slackMessage
+    };
+}
+
+async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, targetTrack, packageName){
+    validateArgumentsLambda("Missing google play enviroment variables", arguments);
+
+    // Создание аутентифицации из параметров
+    const scopes = [
+        "https://www.googleapis.com/auth/androidpublisher"
+    ];
+    const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
+
+    const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+
+    await gplay_uploader.uploadBuildWithAuth(authClient, packageName, inputFile, targetTrack, progressCb);
+    
+    // TODO: Result message handle
+    return {
+        message: `Uploaded to Google Play:\n${path.basename(inputFile)}`
+    };
+}
+
+async function uploadInIOSStore(iosUser, iosPass, ipaToIOSAppStore){
+    validateArgumentsLambda("Missing iOS enviroment variables", arguments);
+
+    await ios_uploader.uploadToIOSAppStore(iosUser, iosPass, ipaToIOSAppStore);
+
+    // TODO: Result message handle
+    return {
+        message: `Uploaded to iOS store:\n${path.basename(ipaToIOSAppStore)}`
+    };
+}
+
+async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir){
+    validateArgumentsLambda("Missing SSH enviroment variables", arguments);
+    
+    const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+    await ssh_uploader.uploadBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir, progressCb);
+
+    // TODO: Result message handle
+    const filesNames = sshUploadFiles.map((filename)=>{
+        return path.basename(filename);
+    }).join("\n");
+    return {
+        message: `Uploaded to Samba:\n\n${filesNames}`
+    };
+}
+
+async function uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles){
+    const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+    await slack_uploader.uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles, progressCb);
+
     return {};
 }
 
@@ -104,27 +186,52 @@ async function main() {
     const appCenterAppOwnerName = process.env["APP_CENTER_APP_OWNER_NAME"];
     const googleEmail = process.env["GOOGLE_SERVICE_EMAIL"];
     const googleKeyId = process.env["GOOGLE_KEY_ID"];
-    const googleKey = process.env["GOOGLE_KEY"];
+    const googleKeyRaw = process.env["GOOGLE_KEY"];
+    const iosUser = process.env["IOS_USER"]; // TODO: Можно ли передавать так?
+    const iosPass = process.env["IOS_PASS"]; // TODO: Можно ли передавать так?
+    const sshServerName = process.env["SSH_SERVER"];
+    const sshUser = process.env["SSH_USER"];
+    const sshPass = process.env["SSH_PASS"];
+    const sshPrivateKeyFilePath = process.env["SSH_PRIVATE_KEY_PATH"];
+    const slackApiToken = process.env["SLACK_API_TOKEN"];
+    const slackChannel = process.env["SLACK_CHANNEL"];
+
+    // Фиксим данные из окружения
+    const googleKey = replaceAllInString(googleKeyRaw, "\\n", "\n");
 
     //////////////////////////////////////////////////////////////////////////////
 
     // Парсим аргументы коммандной строки, https://github.com/tj/commander.js
     const commaSeparatedList = (value) => {
         return value.split(",").filter((val)=>{
-            return val.length > 0;
+            return val && (val.length > 0);
         });
     };
-    commander.option("-amz, --amazon_input_file <input apk>", "Input file for amazon uploading");
-    commander.option("-appcenter, --app_center_input_file <input .apk or .ipa>", "Input file for app center uploading");
-    commander.option("-appcentersymb, --app_center_symbols_file <input .dSYM.zip>", "Input symbols archive for app center uploading");
-    commander.option("-gdrivefiles, --google_drive_files <comma_separeted_file_paths>", "Input files for uploading: -gdrivefiles 'file1','file2'", commaSeparatedList);
-    commander.option("-gdrivetarget, --google_drive_target_folder_id <folder_id>", "Target Google drive folder ID");
+    commander.option("--amazon_input_file <input apk>", "Input file for amazon uploading");
+    commander.option("--app_center_input_file <input .apk or .ipa>", "Input file for app center uploading");
+    commander.option("--app_center_symbols_file <input .dSYM.zip>", "Input symbols archive for app center uploading");
+    commander.option("--google_drive_files <comma_separeted_file_paths>", "Input files for uploading: -gdrivefiles 'file1','file2'", commaSeparatedList);
+    commander.option("--google_drive_target_folder_id <folder_id>", "Target Google drive folder ID");
+    commander.option("--google_play_upload_file <file_path>", "File path for google play uploading");
+    commander.option("--google_play_target_track <target_track>", "Target track for google play build");
+    commander.option("--google_play_package_name <package>", "Package name for google play uploading: com.gameinsight.gplay.island2");
+    commander.option("--ipa_to_ios_app_store <ipa build path>", "Ipa file for iOS App store uploading");
+    commander.option("--ssh_upload_files <comma_separeted_file_paths>", "Input files for uploading: -sshfiles='file1','file2'", commaSeparatedList);
+    commander.option("--ssh_target_server_dir <dir>", "Target server directory for files");
+    commander.option("--slack_upload_files <comma_separeted_file_paths>", "Input files for uploading: -slackfiles='file1','file2'", commaSeparatedList);
     commander.parse(process.argv);
     const amazonInputFile = commander.amazon_input_file;
     const appCenterFile = commander.app_center_input_file;
     const appCenterSymbols = commander.app_center_input_file;
     const googleDriveFiles = commander.google_drive_files;
     const googleDriveFolderId = commander.google_drive_target_folder_id;
+    const googlePlayUploadFile = commander.google_play_upload_file;
+    const googlePlayTargetTrack = commander.google_play_target_track;
+    const googlePlayPackageName = commander.google_play_package_name;
+    const ipaToIOSAppStore = commander.ipa_to_ios_app_store;
+    const sshUploadFiles = commander.ssh_upload_files;
+    const sshTargetDir = commander.ssh_target_server_dir;
+    const slackUploadFiles = commander.slack_upload_files;
 
     //////////////////////////////////////////////////////////////////////////////
 
@@ -134,8 +241,18 @@ async function main() {
             amazonInputFile,
             appCenterFile,
             appCenterSymbols,
-            ...googleDriveFiles, // Разворачиваем массив в отдельные элементы
+            googlePlayUploadFile,
+            ipaToIOSAppStore,
         ];
+        if(googleDriveFiles){
+            filesList = filesList.concat(googleDriveFiles);
+        }
+        if(sshUploadFiles){
+            filesList = filesList.concat(sshUploadFiles);
+        }
+        if(slackUploadFiles){
+            filesList = filesList.concat(slackUploadFiles);
+        }
         // Отбрасываем пустые
         filesList = filesList.filter(val => {
             return val !== undefined;
@@ -145,27 +262,65 @@ async function main() {
     }
 
     // Промисы с будущими результатами
-    const allPromises = [];
+    const allPromises = new Set();
 
     // Amazon
     if (amazonInputFile) {
         const uploadProm = uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile);
-        allPromises.push(uploadProm);
+        allPromises.add(uploadProm);
     }
 
     // App center
     if(appCenterFile){
         const uploadProm = uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, appCenterFile, appCenterSymbols);
-        allPromises.push(uploadProm);
+        allPromises.add(uploadProm);
     }
 
     // Google drive
     if(googleDriveFiles){
         const uploadProm = uploadInGDrive(googleEmail, googleKeyId, googleKey, googleDriveFiles, googleDriveFolderId);
-        allPromises.push(uploadProm);
+        allPromises.add(uploadProm);
     }
 
-    await Promise.all(allPromises);
+    // Google play
+    if(googlePlayUploadFile){
+        const uploadProm = uploadInGPlay(googleEmail, googleKeyId, googleKey, googlePlayUploadFile, googlePlayTargetTrack, googlePlayPackageName);
+        allPromises.add(uploadProm);
+    }
+
+    // iOS
+    if(ipaToIOSAppStore){
+        const uploadProm = uploadInIOSStore(iosUser, iosPass, ipaToIOSAppStore);
+        allPromises.add(uploadProm);
+    }
+
+    // SSH
+    if(sshUploadFiles){
+        const uploadProm = uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir);
+        allPromises.add(uploadProm);
+    }
+
+    // Slack
+    if(slackUploadFiles){
+        const uploadProm = uploadFilesToSlack(slackApiToken, slackChannel, slackUploadFiles);
+        allPromises.add(uploadProm);
+    }
+
+    // Вывод сообщений в слак
+    allPromises.forEach((prom)=>{
+        // Прописываем удаление из Set при завершении промиса
+        // eslint-disable-next-line promise/catch-or-return
+        prom.finally(()=>{
+            allPromises.delete(prom);
+        });
+    });
+    while(allPromises.size > 0){
+        const result = await Promise.race(allPromises);
+        if(result.message !== undefined){
+            const message = "```" + result.message + "```";
+            slack_uploader.sendMessageToSlack(slackApiToken, slackChannel, message);
+        }
+    }
 }
 
 main();
