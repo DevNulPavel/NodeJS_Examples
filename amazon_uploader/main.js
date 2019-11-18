@@ -4,7 +4,6 @@ const readline = require("readline");
 const commander = require("commander");
 const uploader = require("./uploader");
 
-
 //http://frontendcollisionblog.com/javascript/2015/12/26/using-nodejs-to-upload-app-to-google-play.html
 //https://googleapis.dev/nodejs/googleapis/latest/androidpublisher/classes/Resource$Edits$Apks-1.html#upload
 //https://stackoverflow.com/questions/48274009/cant-upload-apk-to-google-play-developer-via-publisher-api
@@ -29,7 +28,10 @@ async function main() {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Парсим аргументы коммандной строки, https://github.com/tj/commander.js
-    commander.requiredOption("-i, --input_file <input apk>", "Input file for uploading");
+    commander.requiredOption(
+        "-i, --input_file <input apk>",
+        "Input file for uploading"
+    );
     commander.parse(process.argv);
     const inputFile = commander.input_file;
 
@@ -41,14 +43,21 @@ async function main() {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     let progressCb = undefined;
-    if (process.stdout.isTTY) { // Нужен ли интерактивный режим?
-        progressCb = (progress) => {
+    if (process.stdout.isTTY) {
+        // Нужен ли интерактивный режим?
+        progressCb = progress => {
             readline.clearLine(process.stdout, 0);
             readline.cursorTo(process.stdout, 0);
             process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
         };
     }
-    const uploadResults = await uploader.uploadBuildOnServer(clientId, clientSecret, appId, inputFile, progressCb);
+    const uploadResults = await uploader.uploadBuildOnServer(
+        clientId,
+        clientSecret,
+        appId,
+        inputFile,
+        progressCb
+    );
     console.log("");
     console.log(uploadResults);
 }

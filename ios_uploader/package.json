@@ -9,6 +9,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "commander": "^4.0.1"
+        "commander": "^4.0.1",
+        "prettier": "^1.19.1"
     }
 }

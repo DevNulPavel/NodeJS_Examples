@@ -85,12 +85,8 @@ async function uploadNewApk(defaultEditRequest, filePath, progressCb) {
     const fileStream = fs.createReadStream(filePath);
 
     if (progressCb) {
-        const totalSize = fs.statSync(filePath).size;
-        let downloadedSize = 0;
         fileStream.on("data", chunk => {
-            downloadedSize += chunk.length;
-            const progress = (downloadedSize / totalSize) * 100;
-            progressCb(progress);
+            progressCb(chunk.length);
         });
     }
 
@@ -157,13 +153,7 @@ async function deleteEditId(defaultEditRequest, etag) {
     return finishResp;
 }
 
-async function uploadBuildOnServer(
-    clientId,
-    clientSecret,
-    appId,
-    filePath,
-    progressCb
-) {
+async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, progressCb) {
     // Запрашиваем токен
     const accessToken = await requestToken(clientId, clientSecret);
 
@@ -185,11 +175,7 @@ async function uploadBuildOnServer(
     });
 
     // Выполняем отгрузку на сервер
-    const uploadResults = await uploadNewApk(
-        defaultEditRequest,
-        filePath,
-        progressCb
-    );
+    const uploadResults = await uploadNewApk(defaultEditRequest, filePath, progressCb);
     //console.log(uploadResults);
 
     return uploadResults;

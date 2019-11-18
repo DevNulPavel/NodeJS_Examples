@@ -28,9 +28,9 @@ async function main(){
     const key = jsonData.private_key;
 
     // Пробуем получить из переменных окружения данные для авторизации
-    /*let email = process.env["GOOGLE_SERVICE_EMAIL"];
-    let keyId = process.env["GOOGLE_KEY_ID"];
-    let key = process.env["GOOGLE_KEY"];
+    /*const email = process.env["GOOGLE_SERVICE_EMAIL"];
+    const keyId = process.env["GOOGLE_KEY_ID"];
+    const key = process.env["GOOGLE_KEY"];
     if (!email || !keyId || !key){
         throw Error("Missing enviroment variables");
     }*/
