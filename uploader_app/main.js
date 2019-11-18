@@ -13,10 +13,11 @@ const ios_uploader = require("./src/ios_uploader");
 const ssh_uploader = require("./src/ssh_uploader");
 const slack_uploader = require("./src/slack_uploader");
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 let currentUploadedBytes = 0;
 let totalBytes = 0;
+let totalMb = 0;
 
 const validateArgumentsLambda = (msg, args)=>{
     for(let i = 0; i < args.length; i++){
@@ -32,6 +33,8 @@ const validateArgumentsLambda = (msg, args)=>{
     }
 };*/
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 function replaceAllInString(input, old, newVal){
     const result = input.split(old).join(newVal);
     return result;
@@ -42,12 +45,15 @@ function updateUploadProgress(bytesUploaded) {
     const progress = (currentUploadedBytes / totalBytes) * 100;
     readline.clearLine(process.stdout, 0);
     readline.cursorTo(process.stdout, 0);
-    process.stdout.write(`Upload progress: ${Math.round(progress)}%`);
+    const curMb = Math.round(currentUploadedBytes/1024/1024);
+    process.stdout.write(`Upload progress: ${Math.round(progress)}% (${curMb}Mb / ${totalMb}Mb)`);
 }
 
 async function calculateTotalUploadsSize(filesPaths){
     const sizePromises = filesPaths.map((filePath)=>{
-        return fs.promises.stat(filePath).catch(()=>{});
+        return fs.promises.stat(filePath).catch((err)=>{ 
+            console.log(err); 
+        });
     });
     const allStats = await Promise.all(sizePromises);
     const bytesSize = allStats.reduce((prevVal, stat)=>{
@@ -64,7 +70,7 @@ async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, a
     await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
 
     return {
-        message: `Uploaded to Amazon:\n${path.basename(amazonInputFile)}`
+        message: `Uploaded to Amazon:\n- ${path.basename(amazonInputFile)}`
     };
 }
 
@@ -87,8 +93,8 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
         progressCb); // Нужен ли интерактивный режим?
     
     const message = withSymbolsUploading ? 
-        `Uploaded to App center:\n${path.basename(inputFile)}\n${path.basename(symbolsFile)}` : 
-        `Uploaded to App center:\n${path.basename(inputFile)}`;
+        `Uploaded to App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
+        `Uploaded to App center:\n- ${path.basename(inputFile)}`;
     return {
         message: message
     };
@@ -113,7 +119,7 @@ async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, t
     let slackMessage = "Google drive links:\n";
     for(let i = 0; i < uploadResults.length; i++){
         const uploadInfo = uploadResults[i];
-        slackMessage += `"${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}\n`;
+        slackMessage += `- ${uploadInfo.srcFilePath}: ${uploadInfo.webContentLink}\n`;
         //console.log(`Download url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}`);
         //console.log(`Web view url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webViewLink}`); 
     }
@@ -139,7 +145,7 @@ async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, tar
     
     // TODO: Result message handle
     return {
-        message: `Uploaded to Google Play:\n${path.basename(inputFile)}`
+        message: `Uploaded to Google Play:\n- ${path.basename(inputFile)}`
     };
 }
 
@@ -150,7 +156,7 @@ async function uploadInIOSStore(iosUser, iosPass, ipaToIOSAppStore){
 
     // TODO: Result message handle
     return {
-        message: `Uploaded to iOS store:\n${path.basename(ipaToIOSAppStore)}`
+        message: `Uploaded to iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
     };
 }
 
@@ -165,7 +171,7 @@ async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFi
         return path.basename(filename);
     }).join("\n");
     return {
-        message: `Uploaded to Samba:\n\n${filesNames}`
+        message: `Uploaded to Samba (${sshTargetDir}):\n- ${filesNames}`
     };
 }
 
@@ -175,6 +181,8 @@ async function uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles){
 
     return {};
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 async function main() {
     // Пробуем получить из переменных окружения данные для авторизации
@@ -220,9 +228,10 @@ async function main() {
     commander.option("--ssh_target_server_dir <dir>", "Target server directory for files");
     commander.option("--slack_upload_files <comma_separeted_file_paths>", "Input files for uploading: -slackfiles='file1','file2'", commaSeparatedList);
     commander.parse(process.argv);
+
     const amazonInputFile = commander.amazon_input_file;
     const appCenterFile = commander.app_center_input_file;
-    const appCenterSymbols = commander.app_center_input_file;
+    const appCenterSymbols = commander.app_center_symbols_file;
     const googleDriveFiles = commander.google_drive_files;
     const googleDriveFolderId = commander.google_drive_target_folder_id;
     const googlePlayUploadFile = commander.google_play_upload_file;
@@ -237,6 +246,7 @@ async function main() {
 
     // Суммарный объем данных для отгрузки для отображения прогресса
     if (process.stdout.isTTY) {         // Нужен ли интерактивный режим?
+        // список файликов
         let filesList = [
             amazonInputFile,
             appCenterFile,
@@ -259,6 +269,7 @@ async function main() {
         });
         // Считаем размер
         totalBytes = await calculateTotalUploadsSize(filesList);
+        totalMb = Math.round(totalBytes/1024/1024);
     }
 
     // Промисы с будущими результатами

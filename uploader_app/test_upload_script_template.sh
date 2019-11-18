@@ -32,10 +32,15 @@ export SLACK_CHANNEL=""
 # node main.js \
 #     --slack_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png"
 
-# All
+# App center
 # node main.js \
-#     --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
-#     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
-#     --ssh_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
-#     --ssh_target_server_dir "~/test_dir" \
-#     --slack_upload_files "/Users/devnul/Desktop/logs.txt","/Users/devnul/Desktop/Island2.js"
+#     --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa"
+
+# All
+node main.js \
+    --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
+    --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
+    --ssh_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
+    --ssh_target_server_dir "~/test_dir" \
+    --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
+    --slack_upload_files "/Users/devnul/Desktop/logs.txt","/Users/devnul/Desktop/Island2.js"
