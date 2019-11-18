@@ -70,7 +70,7 @@ async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, a
     await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
 
     return {
-        message: `Uploaded to Amazon:\n- ${path.basename(amazonInputFile)}`
+        message: `Uploaded on Amazon:\n- ${path.basename(amazonInputFile)}`
     };
 }
 
@@ -93,8 +93,8 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
         progressCb); // Нужен ли интерактивный режим?
     
     const message = withSymbolsUploading ? 
-        `Uploaded to App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
-        `Uploaded to App center:\n- ${path.basename(inputFile)}`;
+        `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
+        `Uploaded on App center:\n- ${path.basename(inputFile)}`;
     return {
         message: message
     };
@@ -145,7 +145,7 @@ async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, tar
     
     // TODO: Result message handle
     return {
-        message: `Uploaded to Google Play:\n- ${path.basename(inputFile)}`
+        message: `Uploaded on Google Play:\n- ${path.basename(inputFile)}`
     };
 }
 
@@ -156,7 +156,7 @@ async function uploadInIOSStore(iosUser, iosPass, ipaToIOSAppStore){
 
     // TODO: Result message handle
     return {
-        message: `Uploaded to iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
+        message: `Uploaded on iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
     };
 }
 
@@ -169,9 +169,9 @@ async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFi
     // TODO: Result message handle
     const filesNames = sshUploadFiles.map((filename)=>{
         return path.basename(filename);
-    }).join("\n");
+    }).join("\n- ");
     return {
-        message: `Uploaded to Samba (${sshTargetDir}):\n- ${filesNames}`
+        message: `Uploaded on Samba (${sshTargetDir}):\n- ${filesNames}`
     };
 }
 
