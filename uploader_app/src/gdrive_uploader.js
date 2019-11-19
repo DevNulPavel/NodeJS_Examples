@@ -147,7 +147,7 @@ async function uploadFile(drive, parentFolder, filePath, progressCb) {
 
 async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb) {
     // Непосредственно процесс отгрузки
-    const MAX_REQ_COUNT = 5;
+    const MAX_REQ_COUNT = 4;
     const promises = new Set();
     let uploadResults = [];
     for (let i = 0; i < filesForUploading.length; i++) {
@@ -171,11 +171,45 @@ async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb)
     return uploadResults;
 }
 
-async function switchOwner(drive, fileId) {
-
+async function switchOwner(drive, fileId, newOwnerEmail) {
+    try{
+        const permissionResponse = await drive.permissions.create({
+            fileId: fileId,
+            //fields: "id, type, emailAddress, domain, role, displayName, allowFileDiscovery",
+            transferOwnership: true,
+            requestBody:{
+                role: "owner",
+                type: "user",
+                emailAddress: newOwnerEmail
+            }
+        });
+        //console.log(permissionResponse.data);
+        return permissionResponse;
+    }catch(err){
+        //console.log(err.message);
+    }
+    return {};
 }
 
-async function uploadWithAuth(authClient, targetFolderId, filesForUploading, progressCb) {
+async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail){
+    const MAX_REQUESTS_COUNT = 2;
+    const promises = new Set();
+    for (let i = 0; i < uploadedFileIds.length; i++) {
+        const fileId = uploadedFileIds[i]; 
+        const prom = switchOwner(drive, fileId, targetOwnerEmail);
+        promises.add(prom);
+        // eslint-disable-next-line promise/catch-or-return
+        prom.finally(()=>{
+            promises.delete(prom);
+        });
+        if(promises.size > MAX_REQUESTS_COUNT){
+            await Promise.race(promises);
+        }
+    }
+    await Promise.all(promises);
+}
+
+async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, filesForUploading, progressCb) {
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 
@@ -195,38 +229,15 @@ async function uploadWithAuth(authClient, targetFolderId, filesForUploading, pro
     const newFolderName = (new Date()).toLocaleString();
     const newFolderId = await createFolder(drive, targetFolderId, newFolderName);
 
+    // Пробуем сменить владельца новой папки
+    await switchOwner(drive, newFolderId, targetOwnerEmail);
+
     // Выполняем отгрузку
     const uploadResults = await uploadFiles(drive, newFolderId, filesForUploading, progressCb);
-    //console.log(uploadResults);
 
-    /////////////////////////////////////////////////////////////////////////////////
-
-    const uploadedFileIds = uploadResults.map((info) => {
-        return info.id;
-    });
-    //console.log(uploadedFileIds);
-    
-    for (let i = 0; i < uploadedFileIds.length; i++) {
-        const fileId = uploadedFileIds[i];
-        const results = await drive.permissions.list({
-            fileId: fileId
-        });
-        console.log(results.data.permissions);
-        for(let j = 0; j < results.data.permissions.length; j++){
-            const permission = results.data.permissions[j];
-            if(permission.role === "owner"){
-                const results = await drive.permissions.update({
-                    fileId: fileId,
-                    permissionId: permission.id,
-                    transferOwnership: true,
-                    requestBody:{
-                        role: "owner"
-                    }
-                });
-                console.log(results.data);
-            }
-        }
-    }
+    // Пробуем сменить владельца файлов
+    const uploadedFileIds = uploadResults.map((info) => { return info.id; });
+    await switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail);
 
     return uploadResults;
 }

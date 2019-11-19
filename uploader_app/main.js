@@ -22,7 +22,7 @@ let totalMb = 0;
 const validateArgumentsLambda = (msg, args)=>{
     for(let i = 0; i < args.length; i++){
         if(args[i] === undefined){
-            throw Error(msg);
+            throw Error(msg + " (param index: "+ i + ")");
         }
     }
 };
@@ -100,7 +100,7 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
     };
 }
 
-async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, targetFolderId){
+async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, targetFolderId, targetOwnerEmail){
     validateArgumentsLambda("Missing google drive enviroment variables", arguments);
 
     // Создание аутентифицации из параметров
@@ -113,7 +113,7 @@ async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, t
 
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
-    const uploadResults = await gdrive_uploader.uploadWithAuth(authClient, targetFolderId, inputFiles, progressCb);
+    const uploadResults = await gdrive_uploader.uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, inputFiles, progressCb);
     
     // Сообщение в слак
     let slackMessage = "Google drive links:\n";
@@ -224,6 +224,7 @@ async function main() {
     commander.option("--app_center_symbols_file <input .dSYM.zip>", "Input symbols archive for app center uploading");
     commander.option("--google_drive_files <comma_separeted_file_paths>", "Input files for uploading: -gdrivefiles 'file1','file2'", commaSeparatedList);
     commander.option("--google_drive_target_folder_id <folder_id>", "Target Google drive folder ID");
+    commander.option("--google_drive_target_owner_email <email>", "Target Google drive folder owner email");
     commander.option("--google_play_upload_file <file_path>", "File path for google play uploading");
     commander.option("--google_play_target_track <target_track>", "Target track for google play build");
     commander.option("--google_play_package_name <package>", "Package name for google play uploading: com.gameinsight.gplay.island2");
@@ -238,6 +239,7 @@ async function main() {
     const appCenterSymbols = commander.app_center_symbols_file;
     const googleDriveFiles = commander.google_drive_files;
     const googleDriveFolderId = commander.google_drive_target_folder_id;
+    const googleDriveTargetOwnerEmail = commander.google_drive_target_owner_email;
     const googlePlayUploadFile = commander.google_play_upload_file;
     const googlePlayTargetTrack = commander.google_play_target_track;
     const googlePlayPackageName = commander.google_play_package_name;
@@ -293,7 +295,7 @@ async function main() {
 
     // Google drive
     if(googleDriveFiles){
-        const uploadProm = uploadInGDrive(googleDriveEmail, googleDriveKeyId, googleDriveKey, googleDriveFiles, googleDriveFolderId);
+        const uploadProm = uploadInGDrive(googleDriveEmail, googleDriveKeyId, googleDriveKey, googleDriveFiles, googleDriveFolderId, googleDriveTargetOwnerEmail);
         allPromises.add(uploadProm);
     }
 

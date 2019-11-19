@@ -6,9 +6,12 @@ export AMAZON_APP_ID=""
 export APP_CENTER_ACCESS_TOKEN=""
 export APP_CENTER_APP_NAME=""
 export APP_CENTER_APP_OWNER_NAME=""
-export GOOGLE_SERVICE_EMAIL=""
-export GOOGLE_KEY_ID=""
-export GOOGLE_KEY=""
+export GOOGLE_DRIVE_SERVICE_EMAIL=""
+export GOOGLE_DRIVE_KEY_ID=""
+export GOOGLE_DRIVE_KEY=""
+export GOOGLE_PLAY_SERVICE_EMAIL=""
+export GOOGLE_PLAY_KEY_ID=""
+export GOOGLE_PLAY_KEY=""
 export IOS_USER=""
 export IOS_PASS=""
 export SSH_SERVER=""
@@ -24,8 +27,9 @@ export SLACK_CHANNEL=""
 
 # GDrive
 # node main.js \
-#     --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
-#     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY"
+#     --google_drive_files "/Users/devnul/Desktop/logs.txt","/Users/devnul/Desktop/screenshot.png" \
+#     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
+#     --google_drive_target_owner_email "veselov@game-insight.com"
 
 # SSH
 # node main.js \
