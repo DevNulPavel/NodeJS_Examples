@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const googleapis = require("googleapis");
 
+//https://developers.google.com/android-publisher
 //http://frontendcollisionblog.com/javascript/2015/12/26/using-nodejs-to-upload-app-to-google-play.html
 //https://googleapis.dev/nodejs/googleapis/latest/androidpublisher/classes/Resource$Edits$Apks-1.html#upload
 //https://stackoverflow.com/questions/48274009/cant-upload-apk-to-google-play-developer-via-publisher-api
@@ -23,11 +24,10 @@ function createPublisher(authClient, packageName){
     return publisher;
 }
 
-async function startInsert(publisher){
+async function startInsert(publisher, packageName){
     // Запрашиваем editId для возможности редактирования
     const insertParams = {
-        //auth: authClient,
-        //packageName: packageName
+        packageName: packageName
         //requestBody?: Schema$AppEdit;
     };
     const editObj = await publisher.edits.insert(insertParams);
@@ -35,15 +35,15 @@ async function startInsert(publisher){
     return editId;
 }
 
-async function uploadBuild(publisher, editId, uploadFile, progressCb){
+async function uploadBuild(publisher, editId, uploadFile, packageName, progressCb){
     // Выбираем тип отгрузки
     let uploadModule;
     //let mimeType;
     const fileExt = path.extname(uploadFile);
-    if (fileExt === "aab"){
+    if (fileExt === ".aab"){
         uploadModule = publisher.edits.bundles;
         //mimeType = "application/octet-stream";
-    }else if(fileExt === "apk"){
+    }else if(fileExt === ".apk"){
         uploadModule = publisher.edits.apks;
         //mimeType = "application/vnd.android.package-archive";
     }else{
@@ -52,61 +52,57 @@ async function uploadBuild(publisher, editId, uploadFile, progressCb){
 
     // Отгрузка в стор
     const fileStream = fs.createReadStream(uploadFile); //var apk = require('fs').readFileSync('./Chronicled.apk');
+    if(progressCb){
+        fileStream.on("data", (chunk) => {
+            progressCb(chunk.length);
+        });
+    }
     const uploadParams = {
-        //auth: authClient,
         editId: editId,
-        //packageName: packageName,
+        packageName: packageName,
         media: {
             //mimeType: mimeType, // TODO: Нужно ли?
             body: fileStream,
         }
     };
-    const methodParams = {};
-    if(progressCb){
-        const localProgressCb = (event)=>{
-            progressCb(event.bytesRead);
-        };
-        methodParams.onUploadProgress = localProgressCb;
-    }
-    const uploadResult = await uploadModule.upload(uploadParams, methodParams);
+    const uploadResult = await uploadModule.upload(uploadParams);
     const uploadedVersion = uploadResult.data.versionCode;
 
     return uploadedVersion;
 }
 
-async function updateBuildTrack(publisher, editId, uploadedVersion, targetTrack){
+/*async function updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName){
     const updateTrackConfig = {
-        //packageName: packageName,
-        //auth: authClient,
+        packageName: packageName,
         editId: editId,
         track: targetTrack,
         requestBody: {
             track: targetTrack,
-            versionCodes: [uploadedVersion]
-            //userFraction:
+            releases: [
+                {
+                    versionCodes: uploadedVersion
+                }
+            ]
         }
     };
     const updateTrackRes = await publisher.edits.tracks.update(updateTrackConfig);
-    return updateTrackRes.data;
-}
 
-async function validateParams(publisher, editId){
+    return updateTrackRes.data;
+}*/
+
+async function validateParams(publisher, editId, packageName){
     const validateParams = {
         editId: editId,
-        //auth: authClient,
-        //packageName: packageName,
+        packageName: packageName,
     };
     const validateResult = await publisher.edits.validate(validateParams);
-    //const validateId = validateResult.data.id;
-    //console.log(validateResult.data);
     return validateResult.data;
 }
 
-async function commitChanges(publisher, editId) {
+async function commitChanges(publisher, editId, packageName) {
     const commitParams = {
-        //auth: authClient,
         editId: editId,
-        //packageName: packageName,
+        packageName: packageName,
     };
     const commitRes = await publisher.edits.commit(commitParams);
     return commitRes.data;
@@ -116,22 +112,31 @@ async function uploadBuildWithAuth(authClient, packageName, uploadFile, targetTr
     const publisher = createPublisher(authClient, packageName);
 
     // Запрашиваем editId для возможности редактирования
-    const editId = await startInsert(publisher);
-    console.log(`Edit id: ${editId}`);
+    const editId = await startInsert(publisher, packageName);
+    //console.log(`Edit id: ${editId}`);
 
     // Старт загрузки
-    const uploadedVersion = await uploadBuild(publisher, editId, uploadFile, progressCb);
+    await uploadBuild(publisher, editId, uploadFile, packageName, progressCb); // Возвращает uploadedVersion 
+    //console.log(`Uploaded version: ${uploadedVersion}`);
 
     // Обновляем track
-    const updateTrackRes = await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack);
-    console.log("Update track res:", updateTrackRes);
+    if(targetTrack){
+        // Сейчас отключено обновление трека
+        /*try{
+            await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName);
+            console.log("Update track res:", updateTrackRes);    
+        }catch(err){
+            console.log(err);
+        }*/
+    }
 
-    // TODO: нужен ли вызов валидации?
-    const validateResult = await validateParams(publisher, editId);
-    console.log("Validate res:", validateResult);
+    // Делаем валиацию
+    await validateParams(publisher, editId, packageName); // Возвращает validateResult 
+    //console.log("Validate res:", validateResult);
 
     // Коммитим изменения
-    const commitRes = await commitChanges(publisher, editId);
+    const commitRes = await commitChanges(publisher, editId, packageName);
+    //console.log("Commit res:", commitRes);
 
     return commitRes;
 }
@@ -144,9 +149,9 @@ module.exports = {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//async function mainTests(){
+/*async function mainTests(){
     // Описываем аутентификацию
-    /*const authOptions = {
+    const authOptions = {
         keyFile: KEY_FILE,  // Path to a .json, .pem, or .p12 key file
         scopes: SCOPE,      // Required scopes for the desired API request
         //keyFilename: // Path to a .json, .pem, or .p12 key file
@@ -159,26 +164,26 @@ module.exports = {
 
     // Авторизуемся
     const сredentials = await authClient.authorize();
-    authClient.setCredentials(сredentials);*/
+    authClient.setCredentials(сredentials);
 
     // Устанавливаем глобально auth клиента для всех запросов, чтобы не надо было каждый раз прокидывать в качестве параметра
-    /*const globalParams = {
+    const globalParams = {
         auth: authClient
     };
-    googleapis.google.options(globalParams);*/
+    googleapis.google.options(globalParams);
 
     // Создаем паблишер
-    /*const publisherParams = {
+    const publisherParams = {
         version: "v3",
         auth: authClient,
         params: {
             packageName: PACKAGE_NAME
         }
     }
-    const publisher = googleapis.google.androidpublisher(publisherParams);*/
+    const publisher = googleapis.google.androidpublisher(publisherParams);
 
     // Пример получения отзывов
-    /*{
+    {
         // https://googleapis.dev/nodejs/googleapis/latest/androidpublisher/interfaces/Params$Resource$Reviews$List.html
         const listParameters = {
             auth: client,
@@ -203,10 +208,10 @@ module.exports = {
                 console.log(`-> ${comment.userComment.text.toString()}`);
             }
         }
-    }*/
+    }
     
     //{
-        /*// Запрашиваем editId для возможности редактирования
+        // Запрашиваем editId для возможности редактирования
         const insertParams = {
             auth: authClient,
             packageName: PACKAGE_NAME
@@ -222,9 +227,9 @@ module.exports = {
             packageName: PACKAGE_NAME
         };
         const getObj = await publisher.edits.get(getParams);
-        const getId = getObj.data.id;*/
+        const getId = getObj.data.id;
 
-        /*// Запрашиваем список бандлов и apk
+        // Запрашиваем список бандлов и apk
         const listParameters = {
             editId: editId,
             auth: authClient,
@@ -253,10 +258,10 @@ module.exports = {
             }
         }else{
             console.log("No apks");
-        }*/
+        }
 
         // Запрашиваем tracks
-        /*const listParams = {
+        const listParams = {
             editId: editId,
             auth: authClient,
             packageName: PACKAGE_NAME
@@ -268,10 +273,10 @@ module.exports = {
                 const track = tracks[i];
                 console.log(track);
             }
-        }*/
+        }
 
         // Запрос apklistings
-        /*if(publisher.edits.apklistings){
+        if(publisher.edits.apklistings){
             const apkListingsParams = {
                 auth: authClient,
                 packageName: PACKAGE_NAME,
@@ -280,18 +285,18 @@ module.exports = {
             };
             const listings = await publisher.edits.apklistings.list(apkListingsParams);
             console.log(listings);
-        }*/
+        }
 
         // Получаем информацию о приложении
-        /*const detailsGetParams = {
+        const detailsGetParams = {
             editId: editId,
             auth: authClient,
             packageName: PACKAGE_NAME
         };
         const detailsResult = await publisher.edits.details.get(detailsGetParams);
-        console.log(detailsResult.data);*/
+        console.log(detailsResult.data);
 
-        /*const expansionfilesParams = {
+        const expansionfilesParams = {
             editId: editId,
             auth: authClient,
             packageName: PACKAGE_NAME,
@@ -299,10 +304,10 @@ module.exports = {
             expansionFileType: ""
         };
         const expansionfilesRes = await publisher.edits.expansionfiles.get(expansionfilesParams);
-        console.log(expansionfilesRes.data);*/
+        console.log(expansionfilesRes.data);
 
         // Запрос картинок
-        /*const imagesParams = {
+        const imagesParams = {
             editId: editId,
             auth: authClient,
             packageName: PACKAGE_NAME,
@@ -310,29 +315,29 @@ module.exports = {
             language: "en-US"
         };
         const imagesRes = await publisher.edits.images.list(imagesParams);
-        console.log(imagesRes.data);*/
+        console.log(imagesRes.data);
 
         // Запрос описания приложения на разных языках
-        /*const listingsParams = {
+        const listingsParams = {
             editId: editId,
             auth: authClient,
             packageName: PACKAGE_NAME,
         };
         const listingRes = await publisher.edits.listings.list(listingsParams);
-        console.log(listingRes.data);*/
+        console.log(listingRes.data);
 
         // TODO: Запрос валидации???
-        /*const validateParams = {
+        const validateParams = {
             editId: editId,
             auth: authClient,
             packageName: PACKAGE_NAME,
         }
         const validateResult = await publisher.edits.validate(validateParams);
         const validateId = validateResult.data.id;
-        console.log(validateResult.data);*/
+        console.log(validateResult.data);
 
         // Отгрузка apk в стор
-        /*const apkStream = fs.createReadStream("file.apk"); //var apk = require('fs').readFileSync('./Chronicled.apk');
+        const apkStream = fs.createReadStream("file.apk"); //var apk = require('fs').readFileSync('./Chronicled.apk');
         const uploadParams = {
             auth: authClient,
             editId: editId,
@@ -343,10 +348,10 @@ module.exports = {
             }
         };
         const uploadResult = await publisher.edits.apks.upload(uploadParams);
-        const uploadedVersion = uploadResult.data.versionCode;*/
+        const uploadedVersion = uploadResult.data.versionCode;
 
         // Устанавливаем track после отгрузки
-        /*const updateTrackConfig = {
+        const updateTrackConfig = {
             packageName: PACKAGE_NAME,
             auth: authClient,
             editId: editId,
@@ -357,7 +362,7 @@ module.exports = {
                 //userFraction:
             }
         };
-        const updateTrackRes = await publisher.edits.tracks.update(updateTrackConfig);*/        
+        const updateTrackRes = await publisher.edits.tracks.update(updateTrackConfig);
     //}
 //}
 
@@ -477,10 +482,10 @@ async function main(){
 
     google.options({ 
         auth: oauth2Client 
-    });*/
+    });
 
     // "open" our edit
-    /*startEdit(jwtClient, play).then(function(data) {
+    startEdit(jwtClient, play).then(function(data) {
         //var apk = require('fs').readFileSync('./Chronicled.apk');
         const apk = fs.createReadStream("file.apk");
         

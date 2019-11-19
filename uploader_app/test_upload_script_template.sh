@@ -49,6 +49,7 @@ export SLACK_CHANNEL=""
 #     --amazon_input_file "Island2-arm32-amazon-11.15.0-314-12112019_1749-821dc9f0.apk" \
 #     --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
 #     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
+#     --google_drive_target_owner_email "devnulpavel@gmail.com" \
 #     --ssh_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
 #     --ssh_target_server_dir "~/test_dir" \
 #     --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \

@@ -36,6 +36,9 @@ const validateArgumentsLambda = (msg, args)=>{
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function replaceAllInString(input, old, newVal){
+    if(!input){
+        return input;
+    }
     const result = input.split(old).join(newVal);
     return result;
 }
@@ -131,12 +134,12 @@ async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, t
 }
 
 async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, targetTrack, packageName){
-    validateArgumentsLambda("Missing google play enviroment variables", arguments);
+    if (!googleEmail || !googleKeyId || !googleKey || !inputFile || !packageName){
+        throw Error("Missing google play enviroment variables");
+    }    
 
     // Создание аутентифицации из параметров
-    const scopes = [
-        "https://www.googleapis.com/auth/androidpublisher"
-    ];
+    const scopes = [ "https://www.googleapis.com/auth/androidpublisher" ];
     const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
 
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
