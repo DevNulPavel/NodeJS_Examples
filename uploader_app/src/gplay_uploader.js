@@ -51,7 +51,7 @@ async function uploadBuild(publisher, editId, uploadFile, packageName, progressC
     }
 
     // Отгрузка в стор
-    const fileStream = fs.createReadStream(uploadFile); //var apk = require('fs').readFileSync('./Chronicled.apk');
+    const fileStream = fs.createReadStream(uploadFile);
     if(progressCb){
         fileStream.on("data", (chunk) => {
             progressCb(chunk.length);

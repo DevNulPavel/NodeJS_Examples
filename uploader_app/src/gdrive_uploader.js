@@ -54,9 +54,9 @@ function createDriveObject(authClient) {
         }
     }
     return {fileIds, folderIds};
-}*/
+}
 
-/*async function deleteFiles(drive, fileIds){
+async function deleteFiles(drive, fileIds){
     // Удаляем все файлы c ограничением максимального количества запросов
     const MAX_REQ_COUNT = 5;
     let totalFilesDeleted = 0;
@@ -86,6 +86,26 @@ function createDriveObject(authClient) {
     return totalFilesDeleted;
 }*/
 
+async function findFolderWithName(drive, targetSubFolderName){
+    let newFolderId = undefined;
+    const listResult = await drive.files.list({
+        fields: "nextPageToken, files(id, name, mimeType)" // https://developers.google.com/drive/api/v3/reference/files
+    });
+    if(listResult.data.files){
+        const files = listResult.data.files;
+        for(let i = 0; i < files.length; i++){
+            const file = files[i];
+            const fileType = file.mimeType;
+            const fileName = file.name;
+            if(fileType === "application/vnd.google-apps.folder" && fileName === targetSubFolderName){
+                newFolderId = file.id;
+                break;
+            }
+        }
+    }
+    return newFolderId;
+}
+
 async function createFolder(drive, parentFolder, newFolderName) {
     // Пример создания папки
     const createFolderParams = {
@@ -103,7 +123,6 @@ async function createFolder(drive, parentFolder, newFolderName) {
     };
     const folderCreateRes = await drive.files.create(createFolderParams);
     const newFolderId = folderCreateRes.data.id;
-    //console.log(folderCreateRes.data)
 
     return newFolderId;
 }
@@ -172,6 +191,9 @@ async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb)
 }
 
 async function switchOwner(drive, fileId, newOwnerEmail) {
+    if(!newOwnerEmail){
+        return {};
+    }
     try{
         const permissionResponse = await drive.permissions.create({
             fileId: fileId,
@@ -209,12 +231,12 @@ async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail){
     await Promise.all(promises);
 }
 
-async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, filesForUploading, progressCb) {
+async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, targetSubFolderName, filesForUploading, progressCb) {
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 
-    /*// Получаем список файлов и папок
-    const {fileIds, folderIds} = await requestFilesList(drive, authClient);
+    // Получаем список файлов и папок
+    /*const {fileIds, folderIds} = await requestFilesList(drive, authClient);
     console.log(`Total files in drive: ${fileIds.length}`);
     console.log(`Total folders in drive: ${folderIds.length}`);
 
@@ -224,16 +246,26 @@ async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, file
     const foldersDeleted = await deleteFiles(drive, folderIds);
     console.log(`Folders deleted from drive: ${foldersDeleted}`);*/
 
-    // Создаем новую подпапку
-    //const newFolderName = ().toISOString().replace(/T/, " ").replace(/\..+/, "");
-    const newFolderName = (new Date()).toLocaleString();
-    const newFolderId = await createFolder(drive, targetFolderId, newFolderName);
+    // Ищем уже готовую подпапку для загрузки
+    let uploadFolderId = undefined;
+    if(targetSubFolderName){
+        uploadFolderId = await findFolderWithName(drive, targetSubFolderName);
 
-    // Пробуем сменить владельца новой папки
-    await switchOwner(drive, newFolderId, targetOwnerEmail);
+        if(!uploadFolderId){
+            // Создаем новую подпапку
+            //const newFolderName = ().toISOString().replace(/T/, " ").replace(/\..+/, "");
+            //const newFolderName = (new Date()).toLocaleString();
+            uploadFolderId = await createFolder(drive, targetFolderId, targetSubFolderName);
+    
+            // Пробуем сменить владельца подпапки
+            await switchOwner(drive, uploadFolderId, targetOwnerEmail);
+        }
+    }else{
+        uploadFolderId = targetFolderId;
+    }
 
     // Выполняем отгрузку
-    const uploadResults = await uploadFiles(drive, newFolderId, filesForUploading, progressCb);
+    const uploadResults = await uploadFiles(drive, uploadFolderId, filesForUploading, progressCb);
 
     // Пробуем сменить владельца файлов
     const uploadedFileIds = uploadResults.map((info) => { return info.id; });
