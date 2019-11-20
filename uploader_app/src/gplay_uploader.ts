@@ -1,8 +1,8 @@
 "use strict";
 
-const path = require("path");
-const fs = require("fs");
-const googleapis = require("googleapis");
+import fs = require("fs");
+import path = require("path");
+import googleapis = require("googleapis");
 
 //https://developers.google.com/android-publisher
 //http://frontendcollisionblog.com/javascript/2015/12/26/using-nodejs-to-upload-app-to-google-play.html
@@ -12,14 +12,13 @@ const googleapis = require("googleapis");
 
 function createPublisher(authClient, packageName){
     // Создаем паблишер
-    const publisherParams = {
+    const publisher = googleapis.google.androidpublisher({
         version: "v3",
         auth: authClient,
         params: {
             packageName: packageName
         }
-    };
-    const publisher = googleapis.google.androidpublisher(publisherParams);
+    });
 
     return publisher;
 }
@@ -108,7 +107,7 @@ async function commitChanges(publisher, editId, packageName) {
     return commitRes.data;
 }
 
-async function uploadBuildWithAuth(authClient, packageName, uploadFile, targetTrack, progressCb){
+export async function uploadBuildWithAuth(authClient, packageName, uploadFile, targetTrack, progressCb){
     const publisher = createPublisher(authClient, packageName);
 
     // Запрашиваем editId для возможности редактирования
@@ -140,11 +139,6 @@ async function uploadBuildWithAuth(authClient, packageName, uploadFile, targetTr
 
     return commitRes;
 }
-
-module.exports = {
-    uploadBuildWithAuth
-};
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

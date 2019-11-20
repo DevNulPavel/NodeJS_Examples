@@ -1,7 +1,7 @@
 "use strict";
 
-const fs = require("fs");
-const request = require("request-promise-native");
+import fs = require("fs");
+import request = require("request-promise-native");
 
 
 const MAX_UPLOADS_COUNT = 4;
@@ -22,7 +22,7 @@ async function uploadFileToSlack(defaultRequest, filePath, progressCb){
 }
 
 
-async function uploadFilesToSlack(apiToken, slackChannel, filesPaths, progressCb){
+export async function uploadFilesToSlack(apiToken, slackChannel, filesPaths, progressCb){
     const defaultReq = request.defaults({
         url: "https://slack.com/api/files.upload",
         method: "POST",
@@ -42,7 +42,7 @@ async function uploadFilesToSlack(apiToken, slackChannel, filesPaths, progressCb
         uploadProm.finally(()=>{
             promises.delete(uploadProm);
         });
-        if(promises.length > MAX_UPLOADS_COUNT){
+        if(promises.size > MAX_UPLOADS_COUNT){
             const anotherResult = await Promise.race(promises);
             uploadResults.push(anotherResult);
         }
@@ -52,7 +52,7 @@ async function uploadFilesToSlack(apiToken, slackChannel, filesPaths, progressCb
     return uploadResults;
 }
 
-async function sendMessageToSlack(apiToken, slackChannel, message){
+export async function sendMessageToSlack(apiToken, slackChannel, message){
     const reqProm = request({
         url: "https://slack.com/api/chat.postMessage",
         method: "POST",
@@ -67,9 +67,3 @@ async function sendMessageToSlack(apiToken, slackChannel, message){
     });
     return await reqProm;
 }
-
-module.exports = {
-    uploadFilesToSlack,
-    sendMessageToSlack
-};
-

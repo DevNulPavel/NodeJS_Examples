@@ -1,8 +1,8 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const googleapis = require("googleapis");
+import fs = require("fs");
+import path = require("path");
+import googleapis = require("googleapis");
 
 
 // https://developers.google.com/drive/api/v3/reference
@@ -12,11 +12,10 @@ const googleapis = require("googleapis");
 
 function createDriveObject(authClient) {
     // Создаем объект drive
-    const driveConfig = {
+    const drive = googleapis.google.drive({
         version: "v3",
         auth: authClient
-    };
-    const drive = googleapis.google.drive(driveConfig);
+    });
 
     return drive;
 }
@@ -231,7 +230,7 @@ async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail){
     await Promise.all(promises);
 }
 
-async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, targetSubFolderName, filesForUploading, progressCb) {
+export async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, targetSubFolderName, filesForUploading, progressCb) {
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 
@@ -273,5 +272,3 @@ async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, targ
 
     return uploadResults;
 }
-
-module.exports.uploadWithAuth = uploadWithAuth;

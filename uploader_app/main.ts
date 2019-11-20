@@ -1,23 +1,23 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const readline = require("readline");
-const commander = require("commander");
-const amazon_uploader = require("./src/amazon_uploader");
-const app_center_uploader = require("./src/app_center_uploader");
-const google_auth = require("./src/google_auth");
-const gdrive_uploader = require("./src/gdrive_uploader");
-const gplay_uploader = require("./src/gplay_uploader");
-const ios_uploader = require("./src/ios_uploader");
-const ssh_uploader = require("./src/ssh_uploader");
-const slack_uploader = require("./src/slack_uploader");
+import fs = require("fs");
+import path = require("path");
+import readline = require("readline");
+import commander = require("commander");
+import amazon_uploader = require("./src/amazon_uploader");
+import app_center_uploader = require("./src/app_center_uploader");
+import google_auth = require("./src/google_auth");
+import gdrive_uploader = require("./src/gdrive_uploader");
+import gplay_uploader = require("./src/gplay_uploader");
+import ios_uploader = require("./src/ios_uploader");
+import ssh_uploader = require("./src/ssh_uploader");
+import slack_uploader = require("./src/slack_uploader");
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-let currentUploadedBytes = 0;
-let totalBytes = 0;
-let totalMb = 0;
+let currentUploadedBytes: number = 0;
+let totalBytes: number = 0;
+let totalMb: number = 0;
 
 const validateArgumentsLambda = (msg, args)=>{
     for(let i = 0; i < args.length; i++){
@@ -32,6 +32,12 @@ const validateArgumentsLambda = (msg, args)=>{
         console.log(`${i}: ${args[i]}`);
     }
 };*/
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+interface UploadResult{
+    message?: string 
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -52,20 +58,23 @@ function updateUploadProgress(bytesUploaded) {
     process.stdout.write(`Upload progress: ${Math.round(progress)}% (${curMb}Mb / ${totalMb}Mb)`);
 }
 
-async function calculateTotalUploadsSize(filesPaths){
+async function calculateTotalUploadsSize(filesPaths): Promise<number>{
     const sizePromises = filesPaths.map((filePath)=>{
         return fs.promises.stat(filePath).catch((err)=>{ 
             console.log(err); 
         });
     });
     const allStats = await Promise.all(sizePromises);
-    const bytesSize = allStats.reduce((prevVal, stat)=>{
-        return prevVal + stat.size;
+    const allSizes = allStats.map((stat: fs.Stats)=>{
+        return stat.size;
+    });
+    const bytesSize: number = allSizes.reduce((prevVal: number, curVal: number)=>{
+        return prevVal + curVal;
     }, 0);
     return bytesSize;
 }
 
-async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile) {
+async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile): Promise<UploadResult> {
     validateArgumentsLambda("Missing amazon input variables", arguments);
 
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
@@ -77,7 +86,7 @@ async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, a
     };
 }
 
-async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, inputFile, symbolsFile) {
+async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, inputFile, symbolsFile): Promise<UploadResult>{
     if (!appCenterAccessToken || !appCenterAppName || !appCenterAppOwnerName || !inputFile){
         throw Error("Missing appcenter input variables");
     }
@@ -103,7 +112,7 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
     };
 }
 
-async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, targetFolderId, targetSubFolderName, targetOwnerEmail){
+async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, targetFolderId, targetSubFolderName, targetOwnerEmail): Promise<UploadResult>{
     if (!googleEmail || !googleKeyId || !googleKey || !inputFiles || !targetFolderId){
         throw Error("Missing google drive enviroment variables");
     }
@@ -135,7 +144,7 @@ async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, t
     };
 }
 
-async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, targetTrack, packageName){
+async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, targetTrack, packageName): Promise<UploadResult>{
     if (!googleEmail || !googleKeyId || !googleKey || !inputFile || !packageName){
         throw Error("Missing google play enviroment variables");
     }    
@@ -165,7 +174,7 @@ async function uploadInIOSStore(iosUser, iosPass, ipaToIOSAppStore){
     };
 }
 
-async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir){
+async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir): Promise<UploadResult>{
     validateArgumentsLambda("Missing SSH enviroment variables", arguments);
     
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
@@ -180,7 +189,7 @@ async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFi
     };
 }
 
-async function uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles){
+async function uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles): Promise<UploadResult>{
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
     await slack_uploader.uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles, progressCb);
 
@@ -286,7 +295,7 @@ async function main() {
     }
 
     // Промисы с будущими результатами
-    const allPromises = new Set();
+    const allPromises = new Set<Promise<UploadResult>>();
 
     // Amazon
     if (amazonInputFile) {
@@ -335,7 +344,7 @@ async function main() {
     }
 
     // Вывод сообщений в слак
-    allPromises.forEach((prom)=>{
+    allPromises.forEach((prom: Promise<UploadResult>)=>{
         // Прописываем удаление из Set при завершении промиса
         // eslint-disable-next-line promise/catch-or-return
         prom.finally(()=>{
@@ -343,7 +352,7 @@ async function main() {
         });
     });
     while(allPromises.size > 0){
-        const result = await Promise.race(allPromises);
+        const result: UploadResult = await Promise.race(allPromises);
         if(result.message !== undefined){
             const message = "```" + result.message + "```";
             slack_uploader.sendMessageToSlack(slackApiToken, slackChannel, message);

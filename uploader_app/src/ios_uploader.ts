@@ -1,11 +1,12 @@
 "use strict";
 
-//const fs = require("fs");
-const child_process = require("child_process");
+import child_process = require("child_process");
+
+
 
 const ALTOOL_PATH = "/Applications/Xcode.app/Contents/Applications/Application Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Support/altool";
 
-async function uploadToIOSAppStore(user, pass, ipaFilePath){
+export async function uploadToIOSAppStore(user, pass, ipaFilePath){
     /*#!/bin/bash -ex
 
     ALTOOL_PATH="/Applications/Xcode.app/Contents/Applications/Application Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Support/altool"
@@ -18,7 +19,7 @@ async function uploadToIOSAppStore(user, pass, ipaFilePath){
     fi*/
 
     const promise = new Promise((resolve, reject)=>{
-        let result = new Buffer.alloc(0);
+        let result = Buffer.alloc(0);
         const parameters = [
             "--upload-app",
             "-f",

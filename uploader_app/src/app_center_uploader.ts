@@ -1,8 +1,9 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const request = require("request-promise-native");
+import fs = require("fs");
+import path = require("path");
+import request = require("request-promise-native");
+
 
 //https://docs.microsoft.com/en-us/appcenter/distribution/uploading
 //https://docs.microsoft.com/en-us/appcenter/diagnostics/ios-symbolication
@@ -119,7 +120,7 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
     return uploadCommitInfo;
 }
 
-async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, needSymbolsUploading, symbolsFilePath, progressCb) {
+export async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, needSymbolsUploading, symbolsFilePath, progressCb) {
     // Базовый конфиг запроса
     const defaultRequest = request.defaults({
         baseUrl: "https://api.appcenter.ms/v0.1",
@@ -144,14 +145,8 @@ async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, ne
     return await Promise.all(promises);
 }
 
-function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath) {
+export function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath) {
     // Можем грузить символы или нет?
     const needSymbolsUploading = (path.extname(buildFilePath) === ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) === ".zip");
     return needSymbolsUploading;
 }
-
-module.exports = {
-    uploadToHockeyApp,
-    isSymbolsUploadingSupported
-};
-

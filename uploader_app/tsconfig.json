@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2018",
+        "jsx": "preserve",
+        "sourceMap": false,
+        "outDir": "./build/",
+        "rootDir": ".",
+        "plugins": [
+            {
+                "name": "typescript-tslint-plugin",
+                "alwaysShowRuleFailuresAsWarnings": false,
+                "ignoreDefinitionFiles": true,
+                "configFile": "tslint.json",
+                "suppressWhileTypeErrorsPresent": false,
+                "jsEnable": true
+            }
+        ]
+    },
+    "compileOnSave": true,
+    "include": [
+        "./",
+        "**/src/*",
+    ],
+    "exclude": [
+        "node_modules",
+        "**/node_modules/*"
+    ]
+}

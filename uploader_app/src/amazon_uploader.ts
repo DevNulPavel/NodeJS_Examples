@@ -1,8 +1,8 @@
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const request = require("request-promise-native");
+import fs = require("fs");
+import path = require("path");
+import request = require("request-promise-native");
 
 // Дока по API
 // https://developer.amazon.com/docs/app-submission-api/appsubapi-endpoints.html
@@ -151,7 +151,7 @@ async function uploadNewApk(defaultEditRequest, filePath, progressCb) {
     return finishResp;
 }*/
 
-async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, progressCb) {
+export async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, progressCb) {
     // Запрашиваем токен
     const accessToken = await requestToken(clientId, clientSecret);
 
@@ -203,5 +203,3 @@ async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, prog
         //console.log(finishResp);
     }*/
 }
-
-module.exports.uploadBuildOnServer = uploadBuildOnServer;

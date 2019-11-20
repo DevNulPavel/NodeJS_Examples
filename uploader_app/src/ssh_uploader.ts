@@ -1,9 +1,10 @@
 "use strict";
 
-const util = require("util");
-const fs = require("fs");
-const path = require("path");
-const ssh2 = require("ssh2");
+import util = require("util");
+import fs = require("fs");
+import path = require("path");
+import ssh2 = require("ssh2");
+
 
 /*if(serverDir.includes("~")){
     client.exec("echo ~$USER", (err, chan)=>{
@@ -47,7 +48,7 @@ client.exec(`mkdir -p ${serverDir}`, (err, chan)=>{
 });
 return;*/
 
-async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, paramServerDir, progressCb){
+export async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, paramServerDir, progressCb){
     //console.log(arguments);
     const resultProm = new Promise((resolve, reject)=>{
         const client = new ssh2.Client();
@@ -111,7 +112,7 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, param
         client.on("timeout", reject);
         
         // Выполняем подключение
-        const connectConfig = {
+        const connectConfig: ssh2.ConnectConfig = {
             host: serverName,
             port: 22,
             username: user
@@ -127,8 +128,3 @@ async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, param
     });
     return await resultProm;
 }
-
-module.exports = {
-    uploadBySSH
-};
-

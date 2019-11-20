@@ -11,15 +11,18 @@
     },
     "dependencies": {
         "commander": "^4.0.1",
+        "googleapis": "^45.0.0",
         "request": "^2.88.0",
         "request-promise-native": "^1.0.8",
-        "googleapis": "^45.0.0",
         "ssh2": "^0.8.6"
     },
     "devDependencies": {
+        "@types/node": "^12.12.11",
+        "@types/ssh2": "^0.5.39",
         "eslint": "^6.6.0",
         "eslint-plugin-node": "^10.0.0",
         "eslint-plugin-promise": "^4.2.1",
-        "eslint-plugin-typelint": "^1.0.9"
+        "eslint-plugin-typelint": "^1.0.9",
+        "typescript": "^3.7.2"
     }
 }

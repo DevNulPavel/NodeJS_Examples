@@ -1,3 +1,4 @@
 node_modules/
 test_keys/
+build/
 test_upload_script.sh
