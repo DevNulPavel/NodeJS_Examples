@@ -151,7 +151,7 @@ async function uploadNewApk(defaultEditRequest, filePath, progressCb) {
     return finishResp;
 }*/
 
-export async function uploadBuildOnServer(clientId, clientSecret, appId, filePath, progressCb) {
+export async function uploadBuildOnServer(clientId: string, clientSecret: string, appId: string, filePath: string, progressCb: (number)=>void) {
     // Запрашиваем токен
     const accessToken = await requestToken(clientId, clientSecret);
 

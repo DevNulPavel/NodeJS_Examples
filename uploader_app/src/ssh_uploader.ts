@@ -48,7 +48,9 @@ client.exec(`mkdir -p ${serverDir}`, (err, chan)=>{
 });
 return;*/
 
-export async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths, paramServerDir, progressCb){
+export async function uploadBySSH(serverName: string, user: string, pass: string, keyFilePath: string, 
+                                  filePaths: string[], paramServerDir: string, 
+                                  progressCb: (number)=>void){
     //console.log(arguments);
     const resultProm = new Promise((resolve, reject)=>{
         const client = new ssh2.Client();
@@ -62,7 +64,7 @@ export async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths
                 // Если путь относительно домашней папки, то надо обновить путь до абсолютного
                 if(serverDir.startsWith("~")){
                     // eslint-disable-next-line promise/param-names
-                    const getHomeFolderProm = new Promise((localResolve, localReject)=>{
+                    const getHomeFolderProm = new Promise<string>((localResolve, localReject)=>{
                         client.exec("echo ~$USER", (err, chan)=>{
                             chan.on("data", (data)=>{
                                 const dataStr = data.toString().replace("\n", "");
@@ -73,7 +75,7 @@ export async function uploadBySSH(serverName, user, pass, keyFilePath, filePaths
                             });
                         });
                     });
-                    const homeFolderPath = await getHomeFolderProm;
+                    const homeFolderPath: string = await getHomeFolderProm;
                     serverDir = serverDir.replace("~", homeFolderPath);
                 }
     

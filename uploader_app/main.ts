@@ -19,7 +19,7 @@ let currentUploadedBytes: number = 0;
 let totalBytes: number = 0;
 let totalMb: number = 0;
 
-const validateArgumentsLambda = (msg, args)=>{
+const validateArgumentsLambda = (msg: string, args: IArguments)=>{
     for(let i = 0; i < args.length; i++){
         if(args[i] === undefined){
             throw Error(msg + " (param index: "+ i + ")");
@@ -41,7 +41,7 @@ interface UploadResult{
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function replaceAllInString(input, old, newVal){
+function replaceAllInString(input: string, old: string, newVal: string): string{
     if(!input){
         return input;
     }
@@ -49,16 +49,16 @@ function replaceAllInString(input, old, newVal){
     return result;
 }
 
-function updateUploadProgress(bytesUploaded) {
+function updateUploadProgress(bytesUploaded: number) {
     currentUploadedBytes += bytesUploaded;
-    const progress = (currentUploadedBytes / totalBytes) * 100;
+    const progress: number = (currentUploadedBytes / totalBytes) * 100;
     readline.clearLine(process.stdout, 0);
     readline.cursorTo(process.stdout, 0);
-    const curMb = Math.round(currentUploadedBytes/1024/1024);
+    const curMb: number = Math.round(currentUploadedBytes/1024/1024);
     process.stdout.write(`Upload progress: ${Math.round(progress)}% (${curMb}Mb / ${totalMb}Mb)`);
 }
 
-async function calculateTotalUploadsSize(filesPaths): Promise<number>{
+async function calculateTotalUploadsSize(filesPaths: Array<string>): Promise<number>{
     const sizePromises = filesPaths.map((filePath)=>{
         return fs.promises.stat(filePath).catch((err)=>{ 
             console.log(err); 
@@ -74,10 +74,10 @@ async function calculateTotalUploadsSize(filesPaths): Promise<number>{
     return bytesSize;
 }
 
-async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile): Promise<UploadResult> {
+async function uploadInAmazon(amazonClientId: string, amazonClientSecret: string, amazonAppId: string, amazonInputFile: string): Promise<UploadResult> {
     validateArgumentsLambda("Missing amazon input variables", arguments);
 
-    const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+    const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
     await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
 
@@ -86,14 +86,15 @@ async function uploadInAmazon(amazonClientId, amazonClientSecret, amazonAppId, a
     };
 }
 
-async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, inputFile, symbolsFile): Promise<UploadResult>{
+async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName: string, appCenterAppOwnerName: string, 
+                                 inputFile: string, symbolsFile: string): Promise<UploadResult>{
     if (!appCenterAccessToken || !appCenterAppName || !appCenterAppOwnerName || !inputFile){
         throw Error("Missing appcenter input variables");
     }
 
-    const withSymbolsUploading = app_center_uploader.isSymbolsUploadingSupported(inputFile, symbolsFile);
+    const withSymbolsUploading: boolean = app_center_uploader.isSymbolsUploadingSupported(inputFile, symbolsFile);
 
-    const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+    const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
     await app_center_uploader.uploadToHockeyApp(
         appCenterAccessToken, 
@@ -104,7 +105,7 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
         symbolsFile, 
         progressCb); // Нужен ли интерактивный режим?
     
-    const message = withSymbolsUploading ? 
+    const message: string = withSymbolsUploading ? 
         `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
         `Uploaded on App center:\n- ${path.basename(inputFile)}`;
     return {
@@ -112,7 +113,9 @@ async function uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCent
     };
 }
 
-async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, targetFolderId, targetSubFolderName, targetOwnerEmail): Promise<UploadResult>{
+async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKey: string, 
+                              inputFiles: string[], 
+                              targetFolderId: string, targetSubFolderName: string, targetOwnerEmail: string): Promise<UploadResult>{
     if (!googleEmail || !googleKeyId || !googleKey || !inputFiles || !targetFolderId){
         throw Error("Missing google drive enviroment variables");
     }
@@ -144,7 +147,9 @@ async function uploadInGDrive(googleEmail, googleKeyId, googleKey, inputFiles, t
     };
 }
 
-async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, targetTrack, packageName): Promise<UploadResult>{
+async function uploadInGPlay(googleEmail: string, googleKeyId: string, 
+                             googleKey: string, inputFile: string, 
+                             targetTrack: string, packageName: string): Promise<UploadResult>{
     if (!googleEmail || !googleKeyId || !googleKey || !inputFile || !packageName){
         throw Error("Missing google play enviroment variables");
     }    
@@ -163,7 +168,7 @@ async function uploadInGPlay(googleEmail, googleKeyId, googleKey, inputFile, tar
     };
 }
 
-async function uploadInIOSStore(iosUser, iosPass, ipaToIOSAppStore){
+async function uploadInIOSStore(iosUser: string, iosPass: string, ipaToIOSAppStore: string){
     validateArgumentsLambda("Missing iOS enviroment variables", arguments);
 
     await ios_uploader.uploadToIOSAppStore(iosUser, iosPass, ipaToIOSAppStore);
@@ -174,7 +179,8 @@ async function uploadInIOSStore(iosUser, iosPass, ipaToIOSAppStore){
     };
 }
 
-async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir): Promise<UploadResult>{
+async function uploadFilesBySSH(sshServerName: string, sshUser: string, sshPass: string, sshPrivateKeyFilePath: string, 
+                                sshUploadFiles: string[], sshTargetDir: string): Promise<UploadResult>{
     validateArgumentsLambda("Missing SSH enviroment variables", arguments);
     
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
@@ -189,7 +195,7 @@ async function uploadFilesBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFi
     };
 }
 
-async function uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles): Promise<UploadResult>{
+async function uploadFilesToSlack(slackApiToken: string, slackChannel: string, uploadFiles: string[]): Promise<UploadResult>{
     const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
     await slack_uploader.uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles, progressCb);
 
@@ -249,20 +255,20 @@ async function main() {
     commander.option("--slack_upload_files <comma_separeted_file_paths>", "Input files for uploading: -slackfiles='file1','file2'", commaSeparatedList);
     commander.parse(process.argv);
 
-    const amazonInputFile = commander.amazon_input_file;
-    const appCenterFile = commander.app_center_input_file;
-    const appCenterSymbols = commander.app_center_symbols_file;
-    const googleDriveFiles = commander.google_drive_files;
-    const googleDriveFolderId = commander.google_drive_target_folder_id;
-    const googleDriveTargetSubFolderName = commander.google_drive_target_subfolder_name;
-    const googleDriveTargetOwnerEmail = commander.google_drive_target_owner_email;
-    const googlePlayUploadFile = commander.google_play_upload_file;
-    const googlePlayTargetTrack = commander.google_play_target_track;
-    const googlePlayPackageName = commander.google_play_package_name;
-    const ipaToIOSAppStore = commander.ipa_to_ios_app_store;
-    const sshUploadFiles = commander.ssh_upload_files;
-    const sshTargetDir = commander.ssh_target_server_dir;
-    const slackUploadFiles = commander.slack_upload_files;
+    const amazonInputFile: string = commander.amazon_input_file;
+    const appCenterFile: string = commander.app_center_input_file;
+    const appCenterSymbols: string = commander.app_center_symbols_file;
+    const googleDriveFiles: string[] = commander.google_drive_files;
+    const googleDriveFolderId : string= commander.google_drive_target_folder_id;
+    const googleDriveTargetSubFolderName: string = commander.google_drive_target_subfolder_name;
+    const googleDriveTargetOwnerEmail: string = commander.google_drive_target_owner_email;
+    const googlePlayUploadFile: string = commander.google_play_upload_file;
+    const googlePlayTargetTrack: string = commander.google_play_target_track;
+    const googlePlayPackageName: string = commander.google_play_package_name;
+    const ipaToIOSAppStore: string = commander.ipa_to_ios_app_store;
+    const sshUploadFiles: string[] = commander.ssh_upload_files;
+    const sshTargetDir: string = commander.ssh_target_server_dir;
+    const slackUploadFiles: string[] = commander.slack_upload_files;
 
     //////////////////////////////////////////////////////////////////////////////
 

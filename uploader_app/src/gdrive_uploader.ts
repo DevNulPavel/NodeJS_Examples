@@ -3,6 +3,7 @@
 import fs = require("fs");
 import path = require("path");
 import googleapis = require("googleapis");
+import google_auth_library = require("google-auth-library");
 
 
 // https://developers.google.com/drive/api/v3/reference
@@ -230,7 +231,9 @@ async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail){
     await Promise.all(promises);
 }
 
-export async function uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, targetSubFolderName, filesForUploading, progressCb) {
+export async function uploadWithAuth(authClient: google_auth_library.JWT, 
+                                     targetOwnerEmail: string, targetFolderId: string, targetSubFolderName: string, 
+                                     filesForUploading: string[], progressCb: (number)=>void) {
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 

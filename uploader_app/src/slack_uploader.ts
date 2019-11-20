@@ -22,7 +22,7 @@ async function uploadFileToSlack(defaultRequest, filePath, progressCb){
 }
 
 
-export async function uploadFilesToSlack(apiToken, slackChannel, filesPaths, progressCb){
+export async function uploadFilesToSlack(apiToken: string, slackChannel: string, filesPaths: string[], progressCb: (number)=>void){
     const defaultReq = request.defaults({
         url: "https://slack.com/api/files.upload",
         method: "POST",
@@ -52,7 +52,7 @@ export async function uploadFilesToSlack(apiToken, slackChannel, filesPaths, pro
     return uploadResults;
 }
 
-export async function sendMessageToSlack(apiToken, slackChannel, message){
+export async function sendMessageToSlack(apiToken: string, slackChannel: string, message: string){
     const reqProm = request({
         url: "https://slack.com/api/chat.postMessage",
         method: "POST",

@@ -3,6 +3,7 @@
 import fs = require("fs");
 import path = require("path");
 import googleapis = require("googleapis");
+import google_auth_library = require("google-auth-library");
 
 //https://developers.google.com/android-publisher
 //http://frontendcollisionblog.com/javascript/2015/12/26/using-nodejs-to-upload-app-to-google-play.html
@@ -107,7 +108,9 @@ async function commitChanges(publisher, editId, packageName) {
     return commitRes.data;
 }
 
-export async function uploadBuildWithAuth(authClient, packageName, uploadFile, targetTrack, progressCb){
+export async function uploadBuildWithAuth(authClient: google_auth_library.JWT, 
+                                          packageName: string, uploadFile: string, targetTrack: string, 
+                                          progressCb: (number)=>void){
     const publisher = createPublisher(authClient, packageName);
 
     // Запрашиваем editId для возможности редактирования

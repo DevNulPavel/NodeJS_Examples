@@ -120,7 +120,9 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
     return uploadCommitInfo;
 }
 
-export async function uploadToHockeyApp(token, appName, appOwnerName, buildFilePath, needSymbolsUploading, symbolsFilePath, progressCb) {
+export async function uploadToHockeyApp(token: string, appName: string, appOwnerName: string, 
+                                        buildFilePath: string, needSymbolsUploading: boolean, 
+                                        symbolsFilePath: string, progressCb: (number)=>void) {
     // Базовый конфиг запроса
     const defaultRequest = request.defaults({
         baseUrl: "https://api.appcenter.ms/v0.1",
@@ -145,7 +147,7 @@ export async function uploadToHockeyApp(token, appName, appOwnerName, buildFileP
     return await Promise.all(promises);
 }
 
-export function isSymbolsUploadingSupported(buildFilePath, symbolsFilePath) {
+export function isSymbolsUploadingSupported(buildFilePath: string, symbolsFilePath: string): boolean {
     // Можем грузить символы или нет?
     const needSymbolsUploading = (path.extname(buildFilePath) === ".ipa") && symbolsFilePath && (path.extname(symbolsFilePath) === ".zip");
     return needSymbolsUploading;

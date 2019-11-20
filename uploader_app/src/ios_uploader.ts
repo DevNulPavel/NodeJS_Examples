@@ -6,7 +6,7 @@ import child_process = require("child_process");
 
 const ALTOOL_PATH = "/Applications/Xcode.app/Contents/Applications/Application Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Support/altool";
 
-export async function uploadToIOSAppStore(user, pass, ipaFilePath){
+export async function uploadToIOSAppStore(user: string, pass: string, ipaFilePath: string){
     /*#!/bin/bash -ex
 
     ALTOOL_PATH="/Applications/Xcode.app/Contents/Applications/Application Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Support/altool"
@@ -61,8 +61,3 @@ export async function uploadToIOSAppStore(user, pass, ipaFilePath){
     });
     return await promise;
 }
-
-module.exports = {
-    uploadToIOSAppStore
-};
-
