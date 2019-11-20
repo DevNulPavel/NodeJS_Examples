@@ -4,14 +4,14 @@ import fs = require("fs");
 import path = require("path");
 import readline = require("readline");
 import commander = require("commander");
-import amazon_uploader = require("./src/amazon_uploader");
-import app_center_uploader = require("./src/app_center_uploader");
-import google_auth = require("./src/google_auth");
-import gdrive_uploader = require("./src/gdrive_uploader");
-import gplay_uploader = require("./src/gplay_uploader");
-import ios_uploader = require("./src/ios_uploader");
-import ssh_uploader = require("./src/ssh_uploader");
-import slack_uploader = require("./src/slack_uploader");
+import amazon_uploader = require("./uploaders/amazon_uploader");
+import app_center_uploader = require("./uploaders/app_center_uploader");
+import google_auth = require("./uploaders/google_auth");
+import gdrive_uploader = require("./uploaders/gdrive_uploader");
+import gplay_uploader = require("./uploaders/gplay_uploader");
+import ios_uploader = require("./uploaders/ios_uploader");
+import ssh_uploader = require("./uploaders/ssh_uploader");
+import slack_uploader = require("./uploaders/slack_uploader");
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

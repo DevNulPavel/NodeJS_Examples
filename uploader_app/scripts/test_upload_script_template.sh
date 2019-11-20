@@ -22,30 +22,30 @@ export SLACK_API_TOKEN=""
 export SLACK_CHANNEL=""
 
 # Amazon
-# node build/main.js \
+# node ../build/main.js \
 #     --amazon_input_file "Island2-arm32-amazon-11.15.0-314-12112019_1749-821dc9f0.apk"
 
 # GDrive
-# node build/main.js \
+# node ../build/main.js \
 #     --google_drive_files "/Users/devnul/Desktop/logs.txt","/Users/devnul/Desktop/screenshot.png" \
 #     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
 #     --google_drive_target_owner_email "veselov@game-insight.com"
 
 # SSH
-# node build/main.js \
+# node ../build/main.js \
 #     --ssh_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png" \
 #     --ssh_target_server_dir "~/test_dir"
 
 # Slack
-# node build/main.js \
+# node ../build/main.js \
 #     --slack_upload_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Desktop/screenshot.png"
 
 # App center
-# node build/main.js \
+# node ../build/main.js \
 #     --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa"
 
 # All
-# node build/main.js \
+# node ../build/main.js \
 #     --amazon_input_file "Island2-arm32-amazon-11.15.0-314-12112019_1749-821dc9f0.apk" \
 #     --google_drive_files "/Users/devnul/Desktop/download.jpeg","/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
 #     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \

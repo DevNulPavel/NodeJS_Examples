@@ -1,25 +1,23 @@
 {
     "compilerOptions": {
+        "composite": false,
+        "incremental": false,
         "module": "commonjs",
-        "target": "es2018",
+        "target": "es2019",
         "jsx": "preserve",
         "sourceMap": false,
         "outDir": "./build/",
         "rootDir": ".",
+        "types": [
+            "commander",
+            "node",
+            "ssh2"
+        ],
         "plugins": [
-            {
-                "name": "typescript-tslint-plugin",
-                "alwaysShowRuleFailuresAsWarnings": false,
-                "ignoreDefinitionFiles": true,
-                "configFile": "tslint.json",
-                "suppressWhileTypeErrorsPresent": false,
-                "jsEnable": true
-            }
         ]
     },
-    "compileOnSave": true,
+    "compileOnSave": false,
     "include": [
-        "./",
         "**/src/*",
     ],
     "exclude": [
