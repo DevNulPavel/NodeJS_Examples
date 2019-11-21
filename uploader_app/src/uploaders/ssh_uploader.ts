@@ -78,15 +78,24 @@ export async function uploadBySSH(serverName: string, user: string, pass: string
                     const homeFolderPath: string = await getHomeFolderProm;
                     serverDir = serverDir.replace("~", homeFolderPath);
                 }
-    
-                const execFunc = util.promisify(client.exec.bind(client));
-                await execFunc(`mkdir -p ${serverDir}`);
+                
+                // Создание папки руками
+                //const execFunc = util.promisify(client.exec.bind(client));
+                //await execFunc(`mkdir -p ${serverDir}`);
         
                 const sftpFunc = util.promisify(client.sftp.bind(client));
-                
+
                 const sftp = await sftpFunc();
+                const mkdirFunc = util.promisify(sftp.mkdir.bind(sftp));
                 const fastPutFunc = util.promisify(sftp.fastPut.bind(sftp));
                 
+                // Создаем папку с помощью SFTP
+                try{
+                    // Если папка уже есть, то OK
+                    await mkdirFunc(serverDir);
+                }catch(err){
+                }
+
                 let uploadConfig = undefined;
                 if(progressCb){
                     const fileUploadProgressCb = (totalTransfered, chunkSize)=>{
