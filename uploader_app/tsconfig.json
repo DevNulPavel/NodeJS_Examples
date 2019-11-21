@@ -18,7 +18,7 @@
     },
     "compileOnSave": false,
     "include": [
-        "**/src/*",
+        "./src/**/*",
     ],
     "exclude": [
         "node_modules",
