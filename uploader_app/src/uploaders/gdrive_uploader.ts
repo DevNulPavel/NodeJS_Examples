@@ -10,6 +10,10 @@ import google_auth_library = require("google-auth-library");
 // https://webapps.stackexchange.com/questions/42999/how-can-i-recursively-set-ownership-of-google-drive-files-and-folders
 // https://github.com/davidstrauss/google-drive-recursive-ownership/blob/master/transfer.py
 
+interface GDriveUploadResult {
+    uploadLinks: Array<Object>,
+    targetFolder: string
+}
 
 function createDriveObject(authClient) {
     // Создаем объект drive
@@ -233,7 +237,7 @@ async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail){
 
 export async function uploadWithAuth(authClient: google_auth_library.JWT, 
                                      targetOwnerEmail: string, targetFolderId: string, targetSubFolderName: string, 
-                                     filesForUploading: string[], progressCb: (number)=>void) {
+                                     filesForUploading: string[], progressCb: (number)=>void): Promise<GDriveUploadResult> {
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
 
@@ -273,5 +277,8 @@ export async function uploadWithAuth(authClient: google_auth_library.JWT,
     const uploadedFileIds = uploadResults.map((info) => { return info.id; });
     await switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail);
 
-    return uploadResults;
+    return {
+        uploadLinks: uploadResults,
+        targetFolder: `https://drive.google.com/drive/u/1/folders/${uploadFolderId}`
+    };
 }
