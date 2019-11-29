@@ -142,7 +142,7 @@ async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKe
         // Сообщение в слак
         let slackMessage = `Google drive links for folder (${uploadResults.targetFolder}):\n`;
         for(let i = 0; i < uploadResults.uploadLinks.length; i++){
-            const uploadInfo = uploadResults[i];
+            const uploadInfo: any  = uploadResults.uploadLinks[i];
             slackMessage += `- ${uploadInfo.srcFilePath}: ${uploadInfo.webViewLink}\n`;
             //console.log(`Download url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}`);
             //console.log(`Web view url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webViewLink}`); 
