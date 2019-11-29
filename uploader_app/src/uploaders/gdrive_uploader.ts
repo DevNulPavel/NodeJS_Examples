@@ -90,10 +90,10 @@ async function deleteFiles(drive, fileIds){
     return totalFilesDeleted;
 }*/
 
-async function findFolderWithName(drive, targetSubFolderName){
+async function findFolderWithName(drive, parentId, targetSubFolderName){
     let newFolderId = undefined;
     const listResult = await drive.files.list({
-        fields: "nextPageToken, files(id, name, mimeType)" // https://developers.google.com/drive/api/v3/reference/files
+        fields: "nextPageToken, files(id, parents, name, mimeType)" // https://developers.google.com/drive/api/v3/reference/files
     });
     if(listResult.data.files){
         const files = listResult.data.files;
@@ -101,7 +101,12 @@ async function findFolderWithName(drive, targetSubFolderName){
             const file = files[i];
             const fileType = file.mimeType;
             const fileName = file.name;
-            if(fileType === "application/vnd.google-apps.folder" && fileName === targetSubFolderName){
+            const parents = file.parents;
+
+            const validType = (fileType === "application/vnd.google-apps.folder");
+            const validName = (fileName === targetSubFolderName);
+            const validParent = (parents !== undefined) ? (parentId in parents) : false;
+            if(validType && validName && validParent){
                 newFolderId = file.id;
                 break;
             }
@@ -255,7 +260,7 @@ export async function uploadWithAuth(authClient: google_auth_library.JWT,
     // Ищем уже готовую подпапку для загрузки
     let uploadFolderId = undefined;
     if(targetSubFolderName){
-        uploadFolderId = await findFolderWithName(drive, targetSubFolderName);
+        uploadFolderId = await findFolderWithName(drive, targetFolderId,  targetSubFolderName);
 
         if(!uploadFolderId){
             // Создаем новую подпапку
@@ -279,6 +284,6 @@ export async function uploadWithAuth(authClient: google_auth_library.JWT,
 
     return {
         uploadLinks: uploadResults,
-        targetFolder: `https://drive.google.com/drive/u/1/folders/${uploadFolderId}`
+        targetFolder: `https://drive.google.com/drive/u/2/folders/${uploadFolderId}`
     };
 }
