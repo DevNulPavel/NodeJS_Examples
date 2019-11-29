@@ -96,6 +96,7 @@ async function findFolderWithName(drive, parentId, targetSubFolderName){
         fields: "nextPageToken, files(id, parents, name, mimeType)" // https://developers.google.com/drive/api/v3/reference/files
     });
     if(listResult.data.files){
+        //console.log(listResult.data);
         const files = listResult.data.files;
         for(let i = 0; i < files.length; i++){
             const file = files[i];
@@ -105,7 +106,7 @@ async function findFolderWithName(drive, parentId, targetSubFolderName){
 
             const validType = (fileType === "application/vnd.google-apps.folder");
             const validName = (fileName === targetSubFolderName);
-            const validParent = (parents !== undefined) ? (parentId in parents) : false;
+            const validParent = (parents !== undefined) ? parents.includes(parentId) : false;
             if(validType && validName && validParent){
                 newFolderId = file.id;
                 break;
@@ -267,7 +268,7 @@ export async function uploadWithAuth(authClient: google_auth_library.JWT,
             //const newFolderName = ().toISOString().replace(/T/, " ").replace(/\..+/, "");
             //const newFolderName = (new Date()).toLocaleString();
             uploadFolderId = await createFolder(drive, targetFolderId, targetSubFolderName);
-    
+            
             // Пробуем сменить владельца подпапки
             await switchOwner(drive, uploadFolderId, targetOwnerEmail);
         }
