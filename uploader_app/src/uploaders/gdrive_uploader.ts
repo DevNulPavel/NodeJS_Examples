@@ -96,7 +96,6 @@ async function findFolderWithName(drive, parentId, targetSubFolderName){
         fields: "nextPageToken, files(id, parents, name, mimeType)" // https://developers.google.com/drive/api/v3/reference/files
     });
     if(listResult.data.files){
-        //console.log(listResult.data);
         const files = listResult.data.files;
         for(let i = 0; i < files.length; i++){
             const file = files[i];
