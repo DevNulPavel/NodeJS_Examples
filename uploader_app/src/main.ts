@@ -3,6 +3,7 @@
 import fs = require("fs");
 import path = require("path");
 import readline = require("readline");
+import lodash = require("lodash");
 import commander = require("commander");
 import amazon_uploader = require("./uploaders/amazon_uploader");
 import app_center_uploader = require("./uploaders/app_center_uploader");
@@ -49,13 +50,18 @@ function replaceAllInString(input: string, old: string, newVal: string): string{
     return result;
 }
 
-function updateUploadProgress(bytesUploaded: number) {
-    currentUploadedBytes += bytesUploaded;
+// Снижаем частоту вызова данной функции с помощью throttle
+const updateProgressBar = lodash.throttle((currentUploadedBytes: number) => {
     const progress: number = (currentUploadedBytes / totalBytes) * 100;
     readline.clearLine(process.stdout, 0);
     readline.cursorTo(process.stdout, 0);
     const curMb: number = Math.round(currentUploadedBytes/1024/1024);
     process.stdout.write(`Upload progress: ${Math.round(progress)}% (${curMb}Mb / ${totalMb}Mb)`);
+}, 250);
+
+function updateUploadProgress(bytesUploaded: number){
+    currentUploadedBytes += bytesUploaded;
+    updateProgressBar(currentUploadedBytes);
 }
 
 async function calculateTotalUploadsSize(filesPaths: Array<string>): Promise<number>{
