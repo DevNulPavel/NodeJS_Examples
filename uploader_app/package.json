@@ -10,6 +10,7 @@
         "node": ">=12.0.0"
     },
     "dependencies": {
+        "async": "^3.1.0",
         "commander": "^4.0.1",
         "googleapis": "^45.0.0",
         "lodash": "^4.17.15",
@@ -18,10 +19,11 @@
         "ssh2": "^0.8.6"
     },
     "devDependencies": {
+        "@types/async": "^3.0.3",
         "@types/commander": "^2.12.2",
+        "@types/lodash": "^4.14.149",
         "@types/node": "^12.12.11",
         "@types/ssh2": "^0.5.39",
-        "@types/lodash": "^4.14.149",
         "eslint": "^6.6.0",
         "eslint-plugin-node": "^10.0.0",
         "eslint-plugin-promise": "^4.2.1",
