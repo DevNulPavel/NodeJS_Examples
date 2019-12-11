@@ -96,7 +96,7 @@ function getTimeForTemplate(){
 
 function getUsers(req, res){
     const exists = fs.existsSync("users.json");
-    if(!exists){
+    if(exists === false){
         const data = JSON.stringify([]);
         fs.writeFileSync("users.json", data);
     }
@@ -106,7 +106,7 @@ function getUsers(req, res){
 }
 
 function getUserInfo(req, res){
-    const id = req.params.id; // получаем id
+    const id = Number(req.params.id); // получаем id
     const content = fs.readFileSync("users.json", "utf8");
     const users = JSON.parse(content);
     let user = null;
@@ -120,8 +120,7 @@ function getUserInfo(req, res){
     // отправляем пользователя
     if(user){
         res.send(user);
-    }
-    else{
+    }else{
         res.status(404).send();
     }
 }
@@ -185,7 +184,7 @@ function putUsers(req, res){
         return res.sendStatus(400);
     }
     
-    const userId = req.body.id;
+    const userId = Number(req.body.id);
     const userName = req.body.name;
     const userAge = req.body.age;
     

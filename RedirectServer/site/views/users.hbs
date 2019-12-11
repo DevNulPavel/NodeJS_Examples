@@ -1,53 +1,79 @@
 <h2>Список пользователей</h2>
 
 <form name="userForm">
-    <input type="hidden" name="id" value="0" />
+    {{!-- Скрытое поле ID,  type="hidden" --}}
+    <input type="number" name="id" value="0" />
+    {{!-- Имя --}}
     <div class="form-group">
         <label for="name">Имя:</label>
         <input class="form-control" name="name" />
     </div>
+    {{!-- Возраст --}}
     <div class="form-group">
         <label for="age">Возраст:</label>
         <input class="form-control" name="age" />
     </div>
+    {{!-- Кнопки сохранить и сбросить --}}
     <div class="panel-body">
         <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
         <a id="reset" class="btn btn-sm btn-primary">Сбросить</a>
     </div>
 </form>
 
+{{!-- Таблица с пользователями --}}
 <table class="table table-condensed table-striped table-bordered">
-    <thead><tr><th>Id</th><th>Имя</th><th>возраст</th><th></th></tr></thead>
+    {{!-- Заголовок таблицы --}}
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Имя</th>
+            <th>возраст</th>
+            <th></th>
+        </tr>
+    </thead>
+    {{!-- Строчки таблицы --}}
     <tbody>
     </tbody>
 </table>
   
 <script>
+    // создание строки для таблицы
+    function row(user) {
+        // TODO: Шаблон какой-нибудь???
+        return "<tr data-rowid='" + user.id + "'><td>" + user.id + "</td>" +
+                "<td>" + user.name + "</td> <td>" + user.age + "</td>" +
+                "<td><a class='editLink' data-id='" + user.id + "'>Изменить</a> | " +
+                "<a class='removeLink' data-id='" + user.id + "'>Удалить</a></td></tr>";
+    }
+
     // Получение всех пользователей
-    function GetUsers() {
+    function getUsers() {
+        // Выполняем GET запрос для получния списка пользователей
         $.ajax({
             url: "/api/users",
             type: "GET",
             contentType: "application/json",
             success: function (users) {
-                var rows = "";
-                // TODO: ???
-                // $.each(JSON.parse(users), function (index, user) {
+                //console.log(users);
+                let rows = "";
+                //$.each(JSON.parse(users), function (index, user) { // TODO: ???
                 $.each(users, function (index, user) {
-                    // добавляем полученные элементы в таблицу
-                    rows += row(user);
+                    rows += row(user); // добавляем полученные элементы к строке
                 })
+                // Добавляем строки к таблице
                 $("table tbody").append(rows);
             }
         });
     }
     // Получение одного пользователя
-    function GetUser(id) {
+    function getUser(id) {
+        // GET запрос, но уже информации о конкретном пользователе
         $.ajax({
             url: "/api/users/"+id,
             type: "GET",
             contentType: "application/json",
             success: function (user) {
+                // После ответа с сервера обновляем поля на странице
                 var form = document.forms["userForm"];
                 form.elements["id"].value = user.id;
                 form.elements["name"].value = user.name;
@@ -56,7 +82,7 @@
         });
     }
     // Добавление пользователя
-    function CreateUser(userName, userAge) {
+    function сreateUser(userName, userAge) {
         $.ajax({
             url: "api/users",
             contentType: "application/json",
@@ -72,7 +98,7 @@
         })
     }
     // Изменение пользователя
-    function EditUser(userId, userName, userAge) {
+    function editUser(userId, userName, userAge) {
         $.ajax({
             url: "api/users",
             contentType: "application/json",
@@ -108,44 +134,42 @@
             }
         })
     }
-    // создание строки для таблицы
-    var row = function (user) {
-        return "<tr data-rowid='" + user.id + "'><td>" + user.id + "</td>" +
-                "<td>" + user.name + "</td> <td>" + user.age + "</td>" +
-                "<td><a class='editLink' data-id='" + user.id + "'>Изменить</a> | " +
-                "<a class='removeLink' data-id='" + user.id + "'>Удалить</a></td></tr>";
-    }
     
-    // сброс значений формы
-    $("#reset").click(function (e) {
-        e.preventDefault();
-        reset();
-    })
+    function usersMain(){
+        // сброс значений формы
+        $("#reset").click(function (e) {
+            e.preventDefault();
+            reset();
+        })
 
-    // отправка формы
-    $("form").submit(function (e) {
-        e.preventDefault();
-        var id = this.elements["id"].value;
-        var name = this.elements["name"].value;
-        var age = this.elements["age"].value;
-        if (id == 0)
-            CreateUser(name, age);
-        else
-            EditUser(id, name, age);
-    });
+        // отправка формы
+        $("form").submit(function (e) {
+            e.preventDefault();
+            var id = this.elements["id"].value;
+            var name = this.elements["name"].value;
+            var age = this.elements["age"].value;
+            if (id == 0){
+                сreateUser(name, age);
+            }else{
+                editUser(id, name, age);
+            }
+        });
 
-    // нажимаем на ссылку Изменить
-    $("body").on("click", ".editLink", function () {
-        var id = $(this).data("id");
-        GetUser(id);
-    })
-    // нажимаем на ссылку Удалить
-    $("body").on("click", ".removeLink", function () {
-        var id = $(this).data("id");
-        DeleteUser(id);
-    })
+        // Нажатие на ссылку Изменить
+        $("body").on("click", ".editLink", function () {
+            var id = $(this).data("id");
+            getUser(id);
+        })
+        // Нажатие на ссылку Удалить
+        $("body").on("click", ".removeLink", function () {
+            var id = $(this).data("id");
+            DeleteUser(id);
+        })
 
-    // загрузка пользователей
-    GetUsers();
+        // загрузка пользователей
+        getUsers();
+    }
+
+    usersMain();
 
 </script>
