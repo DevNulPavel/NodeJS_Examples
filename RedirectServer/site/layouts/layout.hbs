@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    {{!-- Файлы CSS по убыванию --}}
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="{{rootURL}}/styles/style.css">
+    {{!-- Скрипты --}}
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    {{!-- Заголовок --}}
+    <title>Jenkins server</title>
+</head>
+<body>
+    <div class="main_container">
+        {{!-- Таким вот образом устанавливаются части страницы --}}
+        {{> header}}
+        
+        {{!-- Выполняем подстановку тела в виде HTML, поэтому 3 скобочки, 2 скобки - подстановка текстом --}}
+        {{{body}}}
+
+        {{!-- Таким вот образом устанавливаются части страницы --}}
+        {{> footer}}
+    </div>
+</body>
+</html>

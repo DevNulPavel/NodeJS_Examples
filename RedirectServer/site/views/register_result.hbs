@@ -1,0 +1,18 @@
+{{#if content_is_visible}}
+    <div>
+        {{name}}
+        <br>
+        {{age}}
+        <br>
+    </div>
+    <br>
+    <div>
+        Emails:
+        <ul>
+            {{#each emails}}
+                <li>{{this}}</li>
+            {{/each}}
+        </ul>
+    </div>
+{{/if}}
+
