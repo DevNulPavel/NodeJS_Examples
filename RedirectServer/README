@@ -1,0 +1,4 @@
+
+Автоматический перезапуск сервера при изменениях
+    npm install supervisor -g
+    supervisor main.js

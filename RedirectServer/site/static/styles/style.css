@@ -1,0 +1,85 @@
+body{
+    _font-family: times, serif;
+    font-family: monospace;
+    font-size: 16px;
+}
+
+h1, h2, h3, h4, h5, h6{
+    margin: 0;
+    font-family: arial, sans-serif;
+}
+
+/* Контейнер заголовка с навигацией */
+.header{
+    width: 100%;
+}
+
+/* Главный контейнер для выравнивания всего */
+.main_container{
+    margin: 0 auto 0 auto;
+    width: 100%;
+    min-width: 480px;
+    max-width: 800px;
+    border: 1px solid #000000;
+}
+
+/* Заголовок в самом верху */
+.page_title{
+    margin:  6px;
+}
+
+.page_title_link{
+    display: inline-block;
+    vertical-align: center;
+    text-decoration: none;
+    color: black;
+}
+
+/* Внешний вид навигационной панели */
+.navigation{
+    height: 30px;
+    border: 1px solid #000000;
+    display: flex; /* Гибкое выравнивание содержимого */
+    _flex-direction: row;
+    justify-content: space-between; /* space-between - заполняет слева направо с максимальным расстоянием между */
+    align-items: center; /* По-высоте выравниваем по-центру */
+}
+
+/* Внешний вид ссылки */
+.navigation_link{
+    margin: 0 10px 0 10px;
+    display: inline-block;
+    vertical-align: bottom;
+    position: relative;
+    text-decoration: none;
+    color: blue;
+}
+
+/* Внешний вид ссылки при наведении */
+.navigation_link:hover{
+    color: black;
+    transition: color 0.5s linear; /* Анимация цвета текста при наведении */
+}
+
+.nav_link:after { /* Описываем то, что идет после nav_link */
+    content: "";
+    display: block; /* Чтобы элемент был на следующей строке */
+    width: 100%; /* Заполняем ширину всего родительского итема */
+    height: 3px; /* Высота в  3 пикселя */
+    background-color: #fce38a;
+    opacity: 0; /* Невидим по-умолчанию */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1;
+}
+
+.nav_link:hover:after,
+.nav_link.active:after {
+    transition: opacity 0.5s linear; /* Анимация полоски снизу */
+    opacity: 1;
+}
+
+.footer{
+    width: 100%;
+}

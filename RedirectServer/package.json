@@ -1,0 +1,28 @@
+{
+    "name": "redirectserver",
+    "version": "1.0.0",
+    "description": "",
+    "main": "main.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/async": "^3.0.3",
+        "@types/body-parser": "^1.17.1",
+        "@types/express": "^4.17.2",
+        "@types/express-handlebars": "^3.1.0",
+        "@types/node": "^12.12.17",
+        "eslint": "^6.7.2",
+        "eslint-plugin-node": "^10.0.0",
+        "eslint-plugin-promise": "^4.2.1",
+        "eslint-plugin-typelint": "^1.0.9"
+    },
+    "dependencies": {
+        "async": "^3.1.0",
+        "body-parser": "^1.19.0",
+        "express": "^4.17.1",
+        "express-handlebars": "^3.1.0"
+    }
+}
