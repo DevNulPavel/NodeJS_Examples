@@ -1,6 +1,6 @@
 <h2>Список пользователей</h2>
 
-<form name="userForm">
+<form id="edit_form" name="userForm">
     {{!-- Скрытое поле ID,  type="hidden" --}}
     <input type="number" name="id" value="0" />
     {{!-- Имя --}}
@@ -15,7 +15,7 @@
     </div>
     {{!-- Кнопки сохранить и сбросить --}}
     <div class="panel-body">
-        <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+        <button id="submit_button" type="submit" class="btn btn-sm btn-primary">Сохранить</button>
         <a id="reset" class="btn btn-sm btn-primary">Сбросить</a>
     </div>
 </form>
@@ -32,144 +32,10 @@
         </tr>
     </thead>
     {{!-- Строчки таблицы --}}
-    <tbody>
+    <tbody id="users_table_data">
     </tbody>
 </table>
   
 <script>
-    // создание строки для таблицы
-    function row(user) {
-        // TODO: Шаблон какой-нибудь???
-        return "<tr data-rowid='" + user.id + "'><td>" + user.id + "</td>" +
-                "<td>" + user.name + "</td> <td>" + user.age + "</td>" +
-                "<td><a class='editLink' data-id='" + user.id + "'>Изменить</a> | " +
-                "<a class='removeLink' data-id='" + user.id + "'>Удалить</a></td></tr>";
-    }
-
-    // Получение всех пользователей
-    function getUsers() {
-        // Выполняем GET запрос для получния списка пользователей
-        $.ajax({
-            url: "/api/users",
-            type: "GET",
-            contentType: "application/json",
-            success: function (users) {
-                //console.log(users);
-                let rows = "";
-                //$.each(JSON.parse(users), function (index, user) { // TODO: ???
-                $.each(users, function (index, user) {
-                    rows += row(user); // добавляем полученные элементы к строке
-                })
-                // Добавляем строки к таблице
-                $("table tbody").append(rows);
-            }
-        });
-    }
-    // Получение одного пользователя
-    function getUser(id) {
-        // GET запрос, но уже информации о конкретном пользователе
-        $.ajax({
-            url: "/api/users/"+id,
-            type: "GET",
-            contentType: "application/json",
-            success: function (user) {
-                // После ответа с сервера обновляем поля на странице
-                var form = document.forms["userForm"];
-                form.elements["id"].value = user.id;
-                form.elements["name"].value = user.name;
-                form.elements["age"].value = user.age;
-            }
-        });
-    }
-    // Добавление пользователя
-    function сreateUser(userName, userAge) {
-        $.ajax({
-            url: "api/users",
-            contentType: "application/json",
-            method: "POST",
-            data: JSON.stringify({
-                name: userName,
-                age: userAge
-            }),
-            success: function (user) {
-                reset();
-                $("table tbody").append(row(user));
-            }
-        })
-    }
-    // Изменение пользователя
-    function editUser(userId, userName, userAge) {
-        $.ajax({
-            url: "api/users",
-            contentType: "application/json",
-            method: "PUT",
-            data: JSON.stringify({
-                id: userId,
-                name: userName,
-                age: userAge
-            }),
-            success: function (user) {
-                reset();
-                $("tr[data-rowid='" + user.id + "']").replaceWith(row(user));
-            }
-        })
-    }
-
-    // сброс формы
-    function reset() {
-        var form = document.forms["userForm"];
-        form.reset();
-        form.elements["id"].value = 0;
-    }
-
-    // Удаление пользователя
-    function DeleteUser(id) {
-        $.ajax({
-            url: "api/users/"+id,
-            contentType: "application/json",
-            method: "DELETE",
-            success: function (user) {
-                console.log(user);
-                $("tr[data-rowid='" + user.id + "']").remove();
-            }
-        })
-    }
-    
-    function usersMain(){
-        // сброс значений формы
-        $("#reset").click(function (e) {
-            e.preventDefault();
-            reset();
-        })
-
-        // отправка формы
-        $("form").submit(function (e) {
-            e.preventDefault();
-            var id = this.elements["id"].value;
-            var name = this.elements["name"].value;
-            var age = this.elements["age"].value;
-            if (id == 0){
-                сreateUser(name, age);
-            }else{
-                editUser(id, name, age);
-            }
-        });
-
-        // Нажатие на ссылку Изменить
-        $("body").on("click", ".editLink", function () {
-            var id = $(this).data("id");
-            getUser(id);
-        })
-        // Нажатие на ссылку Удалить
-        $("body").on("click", ".removeLink", function () {
-            var id = $(this).data("id");
-            DeleteUser(id);
-        })
-
-        // загрузка пользователей
-        getUsers();
-    }
-
     usersMain();
-
 </script>
