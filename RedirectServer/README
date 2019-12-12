@@ -2,3 +2,8 @@
 Автоматический перезапуск сервера при изменениях, но похоже, что тратит много CPU
     npm install supervisor -g
     supervisor main.js
+    supervisor --watch "main.js" main.js - такой вариант уже экономит CPU
+
+Специальная штука, автоматически перезапускающая при падении приложение
+    npm install forever -g
+    forever main.js 
