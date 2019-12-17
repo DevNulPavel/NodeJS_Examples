@@ -1,3 +1,50 @@
 <div class="">
-    TEST
+    <p>CPU: <span id="cpuUsage">{{cpuUsage}}</span></p>
+    <p>CPU free: <span id="cpuFree">{{cpuFree}}</span></p>
+    <p>Platform: <span id="platform">{{platform}}</span></p>
+    <p>Total CPU: <span id="totalCPU">{{totalCPU}}</span></p>
+    <p>Free mem: <span id="freeMem">{{freeMem}} Mb</span></p>
+    <p>Total mem: <span id="totalMem">{{totalMem}} Mb</span></p>
+    <p>Free mem percent: <span id="freeMemPercent">{{freeMemPercent}}</span></p>
+    <p>Uptime: <span id="uptime">{{uptime}} mSec</span></p>
+    <p>Proc uptime: <span id="procUptime">{{procUptime}}</span></p>
+    <p>Avg 1: <span id="avg1">{{avg1}}</span></p>
+    <p>Avg 5: <span id="avg5">{{avg5}}</span></p>
+    <p>Avg 15: <span id="avg15">{{avg15}}</span></p>
 </div>
+
+<script>
+    let requestInProgress = false;
+
+    function updateInfo(){
+        if(requestInProgress){
+            return;
+        }
+        requestInProgress = true;
+
+        // Выполняем GET запрос для получния списка пользователей
+        fetch("/api/server_stat", {
+            method: "GET",
+            contentType: "application/json"
+        }).then((data)=>{
+            // Преобразуем в Json
+            const info = data.json();
+            return info;
+        }).then((info)=>{
+            for(const key in info){
+                const field = document.querySelector(`#${key}`);
+                if(field){
+                    field.innerHTML = info[key];
+                }
+            }
+
+            return;
+        }).catch((err)=>{
+            console.log("Failed: " + err);
+        }).finally(()=>{
+            requestInProgress = false;
+        });
+    }
+
+    setInterval(updateInfo, 1 * 1000);
+</script>

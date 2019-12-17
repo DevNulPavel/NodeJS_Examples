@@ -36,7 +36,7 @@ async function getJenkinsInfoForTarget(req, res){
     const targetName = req.params.target;
     
     const result = await jenkinsClient.job.get(targetName);
-    console.log(result);
+    //console.log(result);
 
     // отправляем пользователя
     if(result){

@@ -1,28 +1,59 @@
 "use strict";
 
 //const fs = require("fs");
+//const util = require("util");
 const express = require("express");
 const os = require("os-utils");
 
 //https://www.npmjs.com/package/node-os-utils
 //https://www.npmjs.com/package/os-utils
 
+async function getStats(){
+    //const cpuUsageFunc = util.promisify(os.cpuUsage);
+    //const cpuFreeFunc = util.promisify(os.cpuFree);
 
-function renderServerStat(req, res){
-    os.cpuUsage( callback );
-    os.cpuFree( callback );
-    os.platform();
-    os.countCPUs()
-    os.freemem()
-    os.totalmem()
-    os.freememPercentage()
-    os.sysUptime();
-    os.processUptime() 
-    os.loadavg(1)
-    os.loadavg(5)
-    os.loadavg(15)
+    const cpuUsageProm = new Promise((resolve) =>{
+        os.cpuUsage((percent)=>{
+            resolve(percent);
+        });
+    });
+    const cpuFreeProm = new Promise((resolve) =>{
+        os.cpuFree((percent)=>{
+            resolve(percent);
+        });
+    });
 
-    res.render("server_stats");
+    const [cpuUsage, cpuFree] = await Promise.all([cpuUsageProm, cpuFreeProm]);
+    const platform = os.platform();
+    //const totalCPU = os.countCPUs();
+    const freeMem = os.freemem();
+    const totalMem = os.totalmem();
+    const freeMemPercent = os.freememPercentage();
+    const uptime = os.sysUptime();
+    const procUptime = os.processUptime();
+    const avg1 = os.loadavg(1);
+    const avg5 = os.loadavg(5);
+    const avg15 = os.loadavg(15);
+
+    return {
+        cpuUsage,
+        cpuFree,
+        platform,
+        //totalCPU,
+        freeMem,
+        totalMem,
+        freeMemPercent,
+        uptime,
+        procUptime,
+        avg1,
+        avg5,
+        avg15
+    };
+}
+
+async function renderServerStat(req, res){
+    const data = await getStats();
+    res.render("server_stats", data);
 }
 
 function renderServerStatForServer(req, res){
@@ -31,6 +62,11 @@ function renderServerStatForServer(req, res){
         message: pathParameter
     };
     res.render("debug_message", data);
+}
+
+async function getServerStatJson(req, res){
+    const data = await getStats();
+    res.send(data);
 }
 
 function setupHttp(httpApp){
@@ -47,6 +83,9 @@ function setupHttp(httpApp){
     productRouter.get("/", renderServerStat);
     productRouter.get("/:server_name", renderServerStatForServer); // Так же мы можем задействовать параметры в пути, они помечаются двоеточием
     httpApp.use("/server_stat", productRouter);
+
+    // RestAPI for stat
+    httpApp.get("/api/server_stat", getServerStatJson);
 }
 
 module.exports = {
