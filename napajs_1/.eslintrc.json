@@ -4,11 +4,6 @@
         "es6": true,
         "node": true
     },
-    "overrides": [
-        {
-            "files": ["site/**/*"]
-        }
-    ],
     "plugins": [
         "promise",
         "node"

@@ -21,6 +21,7 @@ async function stopMicroJob(){
 
 async function testMicrojob(){
     try{
+        // Запускаем microjob c ожиданием
         await startMicroJob();
 
         // Описываем обработчик прерывания по Ctrl + C
@@ -64,6 +65,8 @@ async function testMicrojob(){
             }
         };
         const cpuBoundJobPromise2 = microjob.job(cpuBoundCode, job2Params);
+
+        // Создаем промис ожидания результатов
         const waitAllPromise = Promise.all([cpuBoundJobPromise1, cpuBoundJobPromise2]);
 
         // Выполняем что-то в текущем потоке

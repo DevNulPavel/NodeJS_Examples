@@ -35,8 +35,11 @@ function runThread(){
         console.log("Exit from worker");
     });
 
-    worker.postMessage("test message 1");
-    worker.postMessage("test message 2");
+    const text1 = "test message 1";
+    const text2 = "test message 2";
+    worker.postMessage(text1);
+    const uint8Array = new Uint8Array([ 1, 2, 3, 4 ]);
+    worker.postMessage(uint8Array, [ uint8Array.buffer ]); // Второй параметр - массив объектов, которые мы переносим
 }
 
 runThread();

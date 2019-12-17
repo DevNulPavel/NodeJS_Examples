@@ -1,0 +1,81 @@
+
+<div>
+    Select target:
+</div>
+
+<form action="" method="">
+    <p>
+        <select id="jenkins_jobs_select" class="select">
+            {{#each jobs}}
+                <option value="{{this}}">{{this}}</option>
+            {{/each}}
+        </select>
+    </p>
+    {{!-- <p>
+        <input type="submit" value="Отправить">
+    </p> --}}
+</form>
+
+<table class="table table-condensed table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+
+    <tbody id="jenkins_jobs_table">
+    </tbody>
+</table>
+
+<script>
+    function newJenkinsInfoRow(info, name) {
+        let data = info[name];
+        if(typeof(data) === "object"){
+            data = JSON.stringify(data);
+        }
+
+        const rowText = 
+        `<tr>
+            <td>${name}</td> <td>${data}</td>
+        </tr>`;
+        return rowText;
+    }
+
+    function updateJenkinsJobsTable(){
+        const selector = document.querySelector("#jenkins_jobs_select");
+        const index = selector.selectedIndex;
+        const value = selector.options[index].value;
+        
+        // Выполняем GET запрос для получния списка пользователей
+        fetch(`/api/jenkins/${value}`, {
+            method: "GET",
+            contentType: "application/json"
+        }).then((usersData)=>{
+            // Преобразуем в Json
+            const info = usersData.json();
+            return info;
+        }).then((info)=>{
+            console.log(info);
+
+            // HTML для строк
+            let rows = "";
+            rows += newJenkinsInfoRow(info, "name");
+            rows += newJenkinsInfoRow(info, "url");
+            rows += newJenkinsInfoRow(info, "lastBuild");
+
+            // Добавляем строки к таблице
+            const tablebody = document.querySelector("#jenkins_jobs_table");
+            tablebody.innerHTML = rows;
+
+            return;
+        }).catch((err)=>{
+            console.log("Failed: " + err);
+        });
+    }
+
+    const selector = document.querySelector("#jenkins_jobs_select");
+    selector.onchange = updateJenkinsJobsTable;
+
+    updateJenkinsJobsTable();
+</script>
