@@ -227,6 +227,18 @@ async function uploadFilesToSlack(slackApiToken: string, slackChannel: string, u
     }
 }
 
+async function sendTextToUser(slackApiToken: string, slackUser: string, slackUserText: string){
+    console.log("Test");
+    // TODO: !!!
+    /*try{*/
+        await slack_uploader.sendTextToSlackUser(slackApiToken, slackUser, slackUserText);
+        return {};
+    /*}catch(err){
+        const slackMessage = `Slack uploading failed with error:\n${err}`;
+        return { message: slackMessage };
+    }*/
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 async function main() {
@@ -278,6 +290,8 @@ async function main() {
     commander.option("--ssh_upload_files <comma_separeted_file_paths>", "Input files for uploading: -sshfiles='file1','file2'", commaSeparatedList);
     commander.option("--ssh_target_server_dir <dir>", "Target server directory for files");
     commander.option("--slack_upload_files <comma_separeted_file_paths>", "Input files for uploading: -slackfiles='file1','file2'", commaSeparatedList);
+    commander.option("--slack_user <user>", "");
+    commander.option("--slack_user_text <text>", "");
     commander.parse(process.argv);
 
     const amazonInputFile: string = commander.amazon_input_file;
@@ -294,6 +308,8 @@ async function main() {
     const sshUploadFiles: string[] = commander.ssh_upload_files;
     const sshTargetDir: string = commander.ssh_target_server_dir;
     const slackUploadFiles: string[] = commander.slack_upload_files;
+    const slackUser: string = commander.slack_user;
+    const slackUserText: string = commander.slack_user_text;
 
     //////////////////////////////////////////////////////////////////////////////
 
@@ -372,6 +388,11 @@ async function main() {
     if(slackUploadFiles){
         const uploadProm = uploadFilesToSlack(slackApiToken, slackChannel, slackUploadFiles);
         allPromises.add(uploadProm);
+    }
+
+    if(slackUser){
+        const sendProm = sendTextToUser(slackApiToken, slackUser, slackUserText);
+        allPromises.add(sendProm);
     }
 
     // Вывод сообщений в слак

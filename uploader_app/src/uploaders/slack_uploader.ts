@@ -21,7 +21,6 @@ async function uploadFileToSlack(defaultRequest, filePath, progressCb){
     return result;
 }
 
-
 export async function uploadFilesToSlack(apiToken: string, slackChannel: string, filesPaths: string[], progressCb: (number)=>void){
     const defaultReq = request.defaults({
         url: "https://slack.com/api/files.upload",
@@ -66,4 +65,27 @@ export async function sendMessageToSlack(apiToken: string, slackChannel: string,
         }
     });
     return await reqProm;
+}
+
+export async function sendTextToSlackUser(apiToken: string, user: string, text: string){
+    console.log("test uploading");
+    console.log(apiToken, user, text);
+    const reqUsersDefault = request.defaults({
+        url: "https://slack.com/api/users.list",
+        method: "GET",
+        //json: true,
+        formData: {
+            "token": apiToken,
+            //"cursor": "",
+            //"limit": 0
+        }
+    });
+    let usersInfo = [];
+    let isComplete = false;
+    let lastCursor = null;
+    while(!isComplete) {
+        const usersList = await reqUsersDefault({});
+        console.log(usersList);
+        isComplete = true;
+    }
 }
