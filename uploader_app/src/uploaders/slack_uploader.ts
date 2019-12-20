@@ -73,7 +73,7 @@ export async function sendTextToSlackUser(apiToken: string, user: string, text: 
     const reqUsersDefault = request.defaults({
         url: "https://slack.com/api/users.list",
         method: "GET",
-        //json: true,
+        json: true,
         formData: {
             "token": apiToken,
             //"cursor": "",
