@@ -227,11 +227,10 @@ async function uploadFilesToSlack(slackApiToken: string, slackChannel: string, u
     }
 }
 
-async function sendTextToUser(slackApiToken: string, slackUser: string, slackUserText: string){
-    console.log("Test");
+async function sendTextToUser(slackApiToken: string, slackUser: string, slackUserEmail: string, slackUserText: string, slackUserQRTextCommentary: string, slackUserQrText: string){
     // TODO: !!!
     /*try{*/
-        await slack_uploader.sendTextToSlackUser(slackApiToken, slackUser, slackUserText);
+        await slack_uploader.sendTextToSlackUser(slackApiToken, slackUser, slackUserEmail, slackUserText, slackUserQRTextCommentary, slackUserQrText);
         return {};
     /*}catch(err){
         const slackMessage = `Slack uploading failed with error:\n${err}`;
@@ -291,7 +290,10 @@ async function main() {
     commander.option("--ssh_target_server_dir <dir>", "Target server directory for files");
     commander.option("--slack_upload_files <comma_separeted_file_paths>", "Input files for uploading: -slackfiles='file1','file2'", commaSeparatedList);
     commander.option("--slack_user <user>", "");
+    commander.option("--slack_user_email <user>", "");
     commander.option("--slack_user_text <text>", "");
+    commander.option("--slack_user_qr_commentary <text>", "");
+    commander.option("--slack_user_qr_text <text>", "");
     commander.parse(process.argv);
 
     const amazonInputFile: string = commander.amazon_input_file;
@@ -309,7 +311,10 @@ async function main() {
     const sshTargetDir: string = commander.ssh_target_server_dir;
     const slackUploadFiles: string[] = commander.slack_upload_files;
     const slackUser: string = commander.slack_user;
+    const slackUserEmail: string = commander.slack_user_email;
     const slackUserText: string = commander.slack_user_text;
+    const slackUserQRTextCommentary: string = commander.slack_user_qr_commentary;
+    const slackUserQRText: string = commander.slack_user_qr_text;
 
     //////////////////////////////////////////////////////////////////////////////
 
@@ -390,8 +395,9 @@ async function main() {
         allPromises.add(uploadProm);
     }
 
+    // Slack direct
     if(slackUser){
-        const sendProm = sendTextToUser(slackApiToken, slackUser, slackUserText);
+        const sendProm = sendTextToUser(slackApiToken, slackUser, slackUserEmail, slackUserText, slackUserQRTextCommentary, slackUserQRText);
         allPromises.add(sendProm);
     }
 
