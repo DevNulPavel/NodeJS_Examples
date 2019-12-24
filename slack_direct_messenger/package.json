@@ -1,7 +1,7 @@
 {
-    "name": "slack_direct_messanger",
+    "name": "slack_direct_messenger",
     "version": "1.0.0",
-    "description": "Slack direct messanger",
+    "description": "Slack direct messenger",
     "main": "main.js",
     "scripts": {},
     "author": "Pavel Ershov",
