@@ -17,5 +17,5 @@ clean:
 
 backup_keys:
 	mkdir -p backup/ && \
-	rm backup/* && \
+	rm -f backup/* && \
 	zip -er backup/test_keys.zip ./test_keys/ ./scripts/

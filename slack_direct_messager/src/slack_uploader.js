@@ -1,135 +1,73 @@
 "use strict";
 
-import os = require("os");
-import path = require("path");
-import fs = require("fs");
-import request = require("request-promise-native");
-import qrcode = require("qrcode");
-import uuid = require("uuid");
+const os = require("os");
+const path = require("path");
+const fs = require("fs");
+const request = require("request-promise-native");
+const qrcode = require("qrcode");
+const uuid = require("uuid");
 
- 
-const MAX_UPLOADS_COUNT = 4;
+//////////////////////////////////////////////////////////////////////////////
+
 const CACHE_FILE_NAME = "users_cache.json";
 
 let USERS_CACHE = null;
 
+//////////////////////////////////////////////////////////////////////////////
 
-async function uploadFileToSlack(defaultRequest, filePath, progressCb){
-    const fileStream = fs.createReadStream(filePath);
-    if (progressCb) {
-        fileStream.on("data", (chunk) => {
-            progressCb(chunk.length);
-        });
-    }
-    const result = await defaultRequest({
-        formData: {
-            "file": fileStream
-        }
-    });
-    return result;
-}
-
-export async function uploadFilesToSlack(apiToken: string, slackChannel: string, filesPaths: string[], progressCb: (number)=>void){
-    const defaultReq = request.defaults({
-        url: "https://slack.com/api/files.upload",
-        method: "POST",
-        formData: {
-            "token": apiToken,
-            "channels": slackChannel
-        }
-    });
-
-    let uploadResults = [];
-
-    const promises = new Set();
-    for(let i = 0; i < filesPaths.length; i++){
-        const uploadProm = uploadFileToSlack(defaultReq, filesPaths[i], progressCb);
-        promises.add(uploadProm);
-        // eslint-disable-next-line promise/catch-or-return
-        uploadProm.finally(()=>{
-            promises.delete(uploadProm);
-        });
-        if(promises.size > MAX_UPLOADS_COUNT){
-            const anotherResult = await Promise.race(promises);
-            uploadResults.push(anotherResult);
-        }
-    }
-    uploadResults = uploadResults.concat(await Promise.all(promises));
-
-    return uploadResults;
-}
-
-export async function sendMessageToSlack(apiToken: string, slackChannel: string, message: string){
-    const reqProm = request({
-        url: "https://slack.com/api/chat.postMessage",
-        method: "POST",
-        //json: true,
-        formData: {
-            "token": apiToken,
-            "channel": slackChannel,
-            "as_user": "false",
-            "username": "buildagent",
-            "text": message
-        }
-    });
-    return await reqProm;
-}
-
-async function requestSlackUserIds(apiToken: string){
-    let usersList: any[] = [];
+async function requestSlackUserIds(apiToken) {
+    let usersList = [];
     let isComplete = false;
     let lastCursor = null;
-    while(!isComplete) {
+    while (!isComplete) {
         isComplete = true;
-        
         const getParams = {
             "token": apiToken,
-            "limit": 150,   
+            "limit": 150,
         };
-        if(lastCursor){
+        if (lastCursor) {
             getParams["cursor"] = lastCursor;
         }
-
-        try{
+        try {
             const response = await request({
                 url: "https://slack.com/api/users.list",
                 method: "GET",
                 json: true,
                 qs: getParams
             });
-            if(response.ok){
-                let curCursor = response.response_metadata.next_cursor;
-                if(curCursor){
+            if (response.ok) {
+                const curCursor = response.response_metadata.next_cursor;
+                if (curCursor) {
                     lastCursor = curCursor;
                     isComplete = false;
                 }
-    
-                const users = response.members.map((userInfo)=>{
+                const users = response.members.map((userInfo) => {
                     return {
                         "id": userInfo.id,
                         "name": userInfo.name,
                         "realName": userInfo.real_name,
                     };
                 });
-    
                 usersList = usersList.concat(users);
             }
-        }catch{
+        }catch (err) {
+            isComplete = true;
         }
     }
     return usersList;
 }
 
-async function findUserIdByEmail(apiToken: string, email: string){
+async function findUserIdByEmail(apiToken, email) {
     if(!email){
         return null;
     }
-    try{
+
+    try {
         const userInfo = await request({
             url: "https://slack.com/api/users.lookupByEmail",
             method: "GET",
             json: true,
-            auth:{
+            auth: {
                 bearer: apiToken,
             },
             qs: {
@@ -138,66 +76,63 @@ async function findUserIdByEmail(apiToken: string, email: string){
             }
         });
         return userInfo.user.id;
-    }catch{
+    } catch (err) {
+        return null;
     }
-    return null;
 }
 
-async function findUserIdByName(apiToken: string, user: string){
-    if(!user){
+async function findUserIdByName(apiToken, user) {
+    if (!user) {
         return null;
     }
 
     user = user.toLowerCase();
-
-    if(!USERS_CACHE){
+    if (!USERS_CACHE) {
         const exists = fs.existsSync(CACHE_FILE_NAME);
-        if(exists){
+        if (exists) {
             try{
                 const rawdata = fs.readFileSync(CACHE_FILE_NAME);
                 USERS_CACHE = JSON.parse(rawdata.toString());    
             }catch(_){
                 USERS_CACHE = {};
             }
-        }else{
+        }else {
             USERS_CACHE = {};
         }
     }
-
-    let foundUserInfo = USERS_CACHE[user];
-    if(foundUserInfo){
+    const foundUserInfo = USERS_CACHE[user];
+    if (foundUserInfo) {
         return foundUserInfo.id;
     }
-    
+
     // Запрос списка пользователей
+    const searchNameComponents = user.split(" ");
     let foundInfo = null;
     const foundUsers = [];
     const usersList = await requestSlackUserIds(apiToken);
-    for(let userInfo of usersList){
+    for (const userInfo of usersList) {
         // Проверяем короткое имя
-        if(userInfo["name"] === user){
-            foundInfo = userInfo
+        if (userInfo["name"] === user) {
+            foundInfo = userInfo;
             break;
         }
 
         // Проверяем полное имя
         let realName = userInfo["realName"];
-        if(realName){
+        if (realName) {
             realName = realName.toLowerCase();
-
-            if(realName == user){
-                foundInfo = userInfo
+            if (realName === user) {
+                foundInfo = userInfo;
                 break;
             }
-
             const testNameComponents = realName.split(" ");
-            const searchNameComponents = user.split(" "); // TODO:
-            for (let testPart of testNameComponents){
-                for (let searchPart of searchNameComponents){
-                    if(testPart == searchPart){
-                        if(userInfo.priority){
+            for (const testPart of testNameComponents) {
+                for (const searchPart of searchNameComponents) {
+                    if (testPart === searchPart) {
+                        if (userInfo.priority) {
                             userInfo.priority += 1;
-                        }else{
+                        }
+                        else {
                             userInfo.priority = 1;
                         }
                         foundUsers.push(userInfo);
@@ -206,48 +141,47 @@ async function findUserIdByName(apiToken: string, user: string){
             }
         }
     }
-    
-    if(foundInfo){
+
+    if (foundInfo) {
         USERS_CACHE[user] = foundInfo;
-    }else if(foundUsers.length > 0){
-        const sortedUsers = foundUsers.sort((a, b)=>{
-            if(a.priority && b.priority){
+    }else if (foundUsers.length > 0) {
+        const sortedUsers = foundUsers.sort((a, b) => {
+            if (a.priority && b.priority) {
                 return b.priority - a.priority;
             }
-            if(a.priority){
+            if (a.priority) {
                 return 0 - a.priority;
             }
-            if(b.priority){
+            if (b.priority) {
                 return b.priority - 0;
             }
             return 999999999;
         });
-
         foundInfo = sortedUsers[0];
         delete foundInfo.priority;
         USERS_CACHE[user] = foundInfo;
     }
 
-    if(foundInfo){
-        let data = JSON.stringify(USERS_CACHE, null, 4);
+    if (foundInfo) {
+        const data = JSON.stringify(USERS_CACHE, null, 4);
         fs.writeFileSync(CACHE_FILE_NAME, data);
-
         return foundInfo.id;
     }
 
     return null;
 }
 
-export async function sendTextToSlackUser(apiToken: string, user: string, email: string, text: string, qrTextCommentary: string, qrText: string){
+async function sendTextToSlackUser(apiToken, user, email, text, qrTextCommentary, qrText) {
+    // User id receive
     let userId = await findUserIdByEmail(apiToken, email);
-    if(!userId){
+    if (!userId) {
         userId = await findUserIdByName(apiToken, user);
-        if(!userId){
+        if (!userId) {
             throw Error(`Id request failed for user: ${user}, email: ${email}`);
         }
     }
     //console.log("User id:", userId);
-    
+
     // Open direct message channel
     const directMessageResp = await request({
         url: "https://slack.com/api/im.open",
@@ -263,8 +197,8 @@ export async function sendTextToSlackUser(apiToken: string, user: string, email:
     });
     const channelIdVal = directMessageResp.channel.id;
     //console.log("Channel id:", channelIdVal);
-    
-    if(text){
+
+    if (text) {
         //console.log("Send text:", text);
         await request({
             url: "https://slack.com/api/chat.postMessage",
@@ -280,7 +214,7 @@ export async function sendTextToSlackUser(apiToken: string, user: string, email:
         });
     }
 
-    if(qrText){
+    if (qrText) {
         //console.log("Send qr:", qrText);
 
         // Temp file
@@ -295,9 +229,9 @@ export async function sendTextToSlackUser(apiToken: string, user: string, email:
         await qrcode.toFile(tempFilePath, qrText, qrConfig);
 
         // Direct message send
-        try{
+        try {
             const fileStream = fs.createReadStream(tempFilePath);
-            const response = await request({
+            await request({
                 url: "https://slack.com/api/files.upload",
                 method: "POST",
                 formData: {
@@ -308,11 +242,15 @@ export async function sendTextToSlackUser(apiToken: string, user: string, email:
                     "filename": filename
                 }
             });
-        }finally{
+        }
+        finally {
             // Temp file delete
             fs.unlinkSync(tempFilePath);
         }
     }
-
     return {};
 }
+
+module.exports = { 
+    sendTextToSlackUser 
+};
