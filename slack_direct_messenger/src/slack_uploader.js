@@ -9,6 +9,8 @@ const uuid = require("uuid");
 
 //////////////////////////////////////////////////////////////////////////////
 
+const HOME_FOLDER = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE);
+const CACHE_FILE_FOLDER = path.join(HOME_FOLDER, ".cache/slack_direct_messenger/");
 const CACHE_FILE_NAME = "users_cache.json";
 
 let USERS_CACHE = null;
@@ -88,10 +90,11 @@ async function findUserIdByName(apiToken, user) {
 
     user = user.toLowerCase();
     if (!USERS_CACHE) {
-        const exists = fs.existsSync(CACHE_FILE_NAME);
+        const fullPath = path.join(CACHE_FILE_FOLDER, CACHE_FILE_NAME);
+        const exists = fs.existsSync(fullPath);
         if (exists) {
             try{
-                const rawdata = fs.readFileSync(CACHE_FILE_NAME);
+                const rawdata = fs.readFileSync(fullPath);
                 USERS_CACHE = JSON.parse(rawdata.toString());    
             }catch(_){
                 USERS_CACHE = {};
@@ -163,8 +166,14 @@ async function findUserIdByName(apiToken, user) {
     }
 
     if (foundInfo) {
+        if(fs.existsSync(CACHE_FILE_FOLDER) === false){
+            fs.mkdirSync(CACHE_FILE_FOLDER, { recursive: true });
+        }
+
+        const fullPath = path.join(CACHE_FILE_FOLDER, CACHE_FILE_NAME);
         const data = JSON.stringify(USERS_CACHE, null, 4);
-        fs.writeFileSync(CACHE_FILE_NAME, data);
+        fs.writeFileSync(fullPath, data);
+        
         return foundInfo.id;
     }
 
