@@ -227,15 +227,14 @@ async function uploadFilesToSlack(slackApiToken: string, slackChannel: string, u
     }
 }
 
-async function sendTextToUser(slackApiToken: string, slackUser: string, slackUserEmail: string, slackUserText: string, slackUserQRTextCommentary: string, slackUserQrText: string){
-    // TODO: !!!
-    /*try{*/
+async function sendTextToSlackUser(slackApiToken: string, slackUser: string, slackUserEmail: string, slackUserText: string, slackUserQRTextCommentary: string, slackUserQrText: string){
+    // try{
         await slack_uploader.sendTextToSlackUser(slackApiToken, slackUser, slackUserEmail, slackUserText, slackUserQRTextCommentary, slackUserQrText);
         return {};
-    /*}catch(err){
-        const slackMessage = `Slack uploading failed with error:\n${err}`;
-        return { message: slackMessage };
-    }*/
+    // }catch(err){
+    //     const slackMessage = `Slack uploading failed with error:\n${err}`;
+    //     return { message: slackMessage };
+    // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,11 +288,11 @@ async function main() {
     commander.option("--ssh_upload_files <comma_separeted_file_paths>", "Input files for uploading: -sshfiles='file1','file2'", commaSeparatedList);
     commander.option("--ssh_target_server_dir <dir>", "Target server directory for files");
     commander.option("--slack_upload_files <comma_separeted_file_paths>", "Input files for uploading: -slackfiles='file1','file2'", commaSeparatedList);
-    commander.option("--slack_user <user>", "");
-    commander.option("--slack_user_email <user>", "");
-    commander.option("--slack_user_text <text>", "");
-    commander.option("--slack_user_qr_commentary <text>", "");
-    commander.option("--slack_user_qr_text <text>", "");
+    commander.option("--slack_user <user>", "Slack user name for direct messages");
+    commander.option("--slack_user_email <user_email>", "Slack user email for direct messages");
+    commander.option("--slack_user_text <text>", "Slack direct message text");
+    commander.option("--slack_user_qr_commentary <text>", "Slack direct QR code commentary");
+    commander.option("--slack_user_qr_text <text>", "Slack direct QR code content");
     commander.parse(process.argv);
 
     const amazonInputFile: string = commander.amazon_input_file;
@@ -396,8 +395,8 @@ async function main() {
     }
 
     // Slack direct
-    if(slackUser){
-        const sendProm = sendTextToUser(slackApiToken, slackUser, slackUserEmail, slackUserText, slackUserQRTextCommentary, slackUserQRText);
+    if(slackUser || slackUserEmail){
+        const sendProm = sendTextToSlackUser(slackApiToken, slackUser, slackUserEmail, slackUserText, slackUserQRTextCommentary, slackUserQRText);
         allPromises.add(sendProm);
     }
 

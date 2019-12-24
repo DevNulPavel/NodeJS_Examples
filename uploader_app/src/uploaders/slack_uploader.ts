@@ -120,7 +120,31 @@ async function requestSlackUserIds(apiToken: string){
     return usersList;
 }
 
+async function findUserIdByEmail(apiToken: string, email: string){
+    try{
+        const userInfo = await request({
+            url: "https://slack.com/api/users.lookupByEmail",
+            method: "GET",
+            json: true,
+            auth:{
+                bearer: apiToken,
+            },
+            qs: {
+                //"token": apiToken,
+                "email": email
+            }
+        });
+        return userInfo.user.id;
+    }catch{
+    }
+    return null;
+}
+
 async function findUserIdByName(apiToken: string, user: string){
+    if(!user){
+        return null;
+    }
+
     user = user.toLowerCase();
 
     if(!USERS_CACHE){
@@ -207,67 +231,51 @@ async function findUserIdByName(apiToken: string, user: string){
     return null;
 }
 
-async function findUserIdByEmail(apiToken: string, email: string){
-    try{
-        const userInfo = await request({
-            url: "https://slack.com/api/users.lookupByEmail",
-            method: "GET",
-            json: true,
-            qs: {
-                "token": apiToken,
-                "email": email
-            }
-        });
-        console.log(userInfo);
-        return userInfo.id;
-    }catch{
-
-    }
-    return null;
-}
-
 export async function sendTextToSlackUser(apiToken: string, user: string, email: string, text: string, qrTextCommentary: string, qrText: string){
-    let userId = await findUserIdByName(apiToken, user);
+    let userId = await findUserIdByEmail(apiToken, email);
     if(!userId){
-        userId = await findUserIdByEmail(apiToken, email);
+        userId = await findUserIdByName(apiToken, user);
         if(!userId){
-            return {}; // TODO: Not found
+            throw Error(`Id request failed for user: ${user}, email: ${email}`);
         }
     }
-
+    //console.log("User id:", userId);
+    
     // Open direct message channel
     const directMessageResp = await request({
         url: "https://slack.com/api/im.open",
         method: "POST",
         json: true,
+        auth: {
+            bearer: apiToken // Разворачивается в "headers"{ "Authorization": "Bearer "+accessToken }
+        },
         formData: {
-            "token": apiToken,
-            "user": userId, // me!
-            //"user": "U06BLS1EZ" // Veselov
+            //"token": apiToken,
+            "user": userId,
         }
     });
     const channelIdVal = directMessageResp.channel.id;
+    //console.log("Channel id:", channelIdVal);
     
     if(text){
+        //console.log("Send text:", text);
         await request({
             url: "https://slack.com/api/chat.postMessage",
             method: "POST",
             json: true,
+            auth: {
+                bearer: apiToken // Разворачивается в "headers"{ "Authorization": "Bearer "+accessToken }
+            },
             formData: {
-                "token": apiToken,
                 "channel": channelIdVal,
                 "text": text,
-                // "_attachments": [
-                //     {
-                //         "pretext": "pre-hello", 
-                //         "text": "text-world"
-                //     }
-                // ]
             }
         });
     }
 
     if(qrText){
+        //console.log("Send qr:", qrText);
+
         // Temp file
         const tempId = uuid.v4();
         const filename = `${tempId}.png`;
@@ -282,7 +290,7 @@ export async function sendTextToSlackUser(apiToken: string, user: string, email:
         // Direct message send
         try{
             const fileStream = fs.createReadStream(tempFilePath);
-            await request({
+            const response = await request({
                 url: "https://slack.com/api/files.upload",
                 method: "POST",
                 formData: {
