@@ -69,7 +69,6 @@ export async function sendMessageToSlack(apiToken: string, slackChannel: string,
         formData: {
             "token": apiToken,
             "channel": slackChannel,
-            "as_user": "false",
             "username": "buildagent",
             "text": message
         }
