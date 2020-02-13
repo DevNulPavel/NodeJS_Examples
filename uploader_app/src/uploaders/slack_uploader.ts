@@ -115,7 +115,7 @@ async function requestSlackUserIds(apiToken: string){
     
                 usersList = usersList.concat(users);
             }
-        }catch{
+        }catch(_){
         }
     }
     return usersList;
@@ -139,7 +139,7 @@ async function findUserIdByEmail(apiToken: string, email: string){
             }
         });
         return userInfo.user.id;
-    }catch{
+    }catch(_){
     }
     return null;
 }

@@ -293,6 +293,7 @@ async function main() {
     commander.option("--slack_user_text <text>", "Slack direct message text");
     commander.option("--slack_user_qr_commentary <text>", "Slack direct QR code commentary");
     commander.option("--slack_user_qr_text <text>", "Slack direct QR code content");
+    commander.option("--slack_text_prefix <text>", "Prefix for slack channel message");
     commander.parse(process.argv);
 
     const amazonInputFile: string = commander.amazon_input_file;
@@ -314,6 +315,7 @@ async function main() {
     const slackUserText: string = commander.slack_user_text;
     const slackUserQRTextCommentary: string = commander.slack_user_qr_commentary;
     const slackUserQRText: string = commander.slack_user_qr_text;
+    const slackTextPrefix: string = commander.slack_text_prefix;
 
     //////////////////////////////////////////////////////////////////////////////
 
@@ -411,7 +413,12 @@ async function main() {
     while(allPromises.size > 0){
         const result: UploadResult = await Promise.race(allPromises);
         if(result.message !== undefined){
-            const message = "```" + result.message + "```";
+            let message = null;
+            if (slackTextPrefix){
+                message = slackTextPrefix + "```" + result.message + "```";
+            }else{
+                message = "```" + result.message + "```";
+            }
             slack_uploader.sendMessageToSlack(slackApiToken, slackChannel, message);
         }
     }
