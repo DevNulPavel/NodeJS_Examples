@@ -415,7 +415,7 @@ async function main() {
         if(result.message !== undefined){
             let message = null;
             if (slackTextPrefix){
-                message = slackTextPrefix + "```" + result.message + "```";
+                message = slackTextPrefix + " " + "```" + result.message + "```";
             }else{
                 message = "```" + result.message + "```";
             }
