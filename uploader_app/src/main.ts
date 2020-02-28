@@ -140,7 +140,6 @@ async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKe
             "https://www.googleapis.com/auth/drive",        // Работа со всеми файлами на диске
         ];
         const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
-        //authClient.fromAPIKey("AIzaSyAKAM-ktgSXkTi_EcpZ9FMYz8aLFcPMkIA");
 
         const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
