@@ -93,6 +93,10 @@ async function deleteFiles(drive, fileIds){
 async function findFolderWithName(drive, parentId, targetSubFolderName){
     let newFolderId = undefined;
     const listResult = await drive.files.list({
+        includeItemsFromAllDrives: true,
+        supportsAllDrives: true,
+        includeTeamDriveItems: true,
+        supportsTeamDrives: true,
         fields: "nextPageToken, files(id, parents, name, mimeType)" // https://developers.google.com/drive/api/v3/reference/files
     });
     if(listResult.data.files){
@@ -118,6 +122,9 @@ async function findFolderWithName(drive, parentId, targetSubFolderName){
 async function createFolder(drive, parentFolder, newFolderName) {
     // Пример создания папки
     const createFolderParams = {
+        supportsAllDrives: true,
+        includeTeamDriveItems: true,
+        supportsTeamDrives: true,
         //auth: authClient,
         requestBody: {
             name: newFolderName,
@@ -141,6 +148,9 @@ async function uploadFile(drive, parentFolder, filePath, progressCb) {
     const fileName = path.basename(filePath);
     const fileStream = fs.createReadStream(filePath); //var apk = require('fs').readFileSync('./Chronicled.apk');
     const createParams = {
+        supportsAllDrives: true,
+        includeTeamDriveItems: true,
+        supportsTeamDrives: true,
         //auth: authClient,
         requestBody: {
             name: fileName,
@@ -199,35 +209,104 @@ async function uploadFiles(drive, parentFolderId, filesForUploading, progressCb)
     return uploadResults;
 }
 
-async function switchOwner(drive, fileId, newOwnerEmail) {
-    if(!newOwnerEmail){
+async function switchOwner(drive, fileId, newOwnerEmail, newDomain) {
+    if(!newOwnerEmail && !newDomain){
         return {};
     }
     try{
-        const permissionResponse = await drive.permissions.create({
-            fileId: fileId,
-            //fields: "id, type, emailAddress, domain, role, displayName, allowFileDiscovery",
-            transferOwnership: true,
-            requestBody:{
-                role: "owner",
-                type: "user",
-                emailAddress: newOwnerEmail
-            }
-        });
-        //console.log(permissionResponse.data);
-        return permissionResponse;
+        // const permList = await drive.permissions.list({
+        //     includeTeamDriveItems: true,
+        //     supportsTeamDrives: true,
+        //     fileId: fileId,
+        //     fields: "*", // id, 
+        // });
+        // console.log(permList.data);
+
+        // const permissions = permList.data["permissions"];
+        // let id = null;
+        // for (let i = 0; i < permissions.length; i++){
+        //     let perm = permissions[i];
+        //     if (perm["emailAddress"].toLowerCase() === newOwnerEmail.toLowerCase()) {
+        //         id = perm["id"];
+        //     }
+        // }
+        // console.log(id);
+
+        // const permissionResponse = await drive.permissions.update({
+        //     fileId: fileId,
+        //     permissionId: id,
+        //     fields: "id, type, emailAddress, domain, role, displayName, allowFileDiscovery",
+        //     transferOwnership: true,
+        //     //useDomainAdminAccess: true,
+        //     requestBody:{
+        //         role: "owner",
+        //         //role: "organizer",
+        //         //type: "user",
+        //         //type: "domain",
+        //         //emailAddress: newOwnerEmail,
+        //         //domain: "game-insight.com",
+        //         //allowFileDiscovery: true
+        //     }
+        // });
+        // console.log(permissionResponse.data);
+
+        // https://developers.google.com/drive/api/v3/reference/permissions/create?apix_params=%7B%22fileId%22%3A%2217cxaTmqlqyctGSQxovt3k3sH2WnIpgnv%22%2C%22transferOwnership%22%3Atrue%2C%22resource%22%3A%7B%22role%22%3A%22owner%22%2C%22type%22%3A%22user%22%2C%22emailAddress%22%3A%22murmansk-build-server%40api-6361261091326496818-652648.iam.gserviceaccount.com%22%7D%7D
+        if(newDomain){
+            const permissionResponse = await drive.permissions.create({
+                fileId: fileId,
+                //fields: "id, type, emailAddress, domain, role, displayName, allowFileDiscovery",
+                //transferOwnership: true,
+                //useDomainAdminAccess: true,
+                supportsAllDrives: true,
+                supportsTeamDrives: true,
+                requestBody:{
+                    role: "writer",
+                    //role: "organizer",
+                    //type: "user",
+                    type: "domain",
+                    //emailAddress: newOwnerEmail,
+                    domain: "game-insight.com",
+                    //allowFileDiscovery: true
+                }
+            });
+            //console.log(permissionResponse.data);
+    
+            return permissionResponse;
+        }
+
+        if(newOwnerEmail){
+            const permissionResponse = await drive.permissions.create({
+                fileId: fileId,
+                //fields: "id, type, emailAddress, domain, role, displayName, allowFileDiscovery",
+                //transferOwnership: true,
+                //useDomainAdminAccess: true,
+                supportsAllDrives: true,
+                supportsTeamDrives: true,
+                requestBody:{
+                    role: "owner",
+                    //role: "organizer",
+                    type: "user",
+                    //type: "domain",
+                    emailAddress: newOwnerEmail,
+                    //domain: "game-insight.com",
+                    //allowFileDiscovery: true
+                }
+            });
+            //console.log(permissionResponse.data);
+            return permissionResponse;            
+        }
     }catch(err){
-        //console.log(err.message);
+        console.log(err.message);
     }
     return {};
 }
 
-async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail){
+async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail, targetDomain){
     const MAX_REQUESTS_COUNT = 2;
     const promises = new Set();
     for (let i = 0; i < uploadedFileIds.length; i++) {
         const fileId = uploadedFileIds[i]; 
-        const prom = switchOwner(drive, fileId, targetOwnerEmail);
+        const prom = switchOwner(drive, fileId, targetOwnerEmail, targetDomain);
         promises.add(prom);
         // eslint-disable-next-line promise/catch-or-return
         prom.finally(()=>{
@@ -241,10 +320,15 @@ async function switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail){
 }
 
 export async function uploadWithAuth(authClient: google_auth_library.JWT, 
-                                     targetOwnerEmail: string, targetFolderId: string, targetSubFolderName: string, 
+                                     targetOwnerEmail: string, targetDomain: string, targetFolderId: string, targetSubFolderName: string, 
                                      filesForUploading: string[], progressCb: (number)=>void): Promise<GDriveUploadResult> {
     // Создаем рабочий объект диска
     const drive = createDriveObject(authClient);
+
+    // Чистка корзины
+    // const result = await drive.files.emptyTrash();
+    // console.log(result);
+    // console.log(result.data);
 
     // Получаем список файлов и папок
     /*const {fileIds, folderIds} = await requestFilesList(drive, authClient);
@@ -260,7 +344,7 @@ export async function uploadWithAuth(authClient: google_auth_library.JWT,
     // Ищем уже готовую подпапку для загрузки
     let uploadFolderId = undefined;
     if(targetSubFolderName){
-        uploadFolderId = await findFolderWithName(drive, targetFolderId,  targetSubFolderName);
+        uploadFolderId = await findFolderWithName(drive, targetFolderId, targetSubFolderName);
 
         if(!uploadFolderId){
             // Создаем новую подпапку
@@ -269,7 +353,7 @@ export async function uploadWithAuth(authClient: google_auth_library.JWT,
             uploadFolderId = await createFolder(drive, targetFolderId, targetSubFolderName);
             
             // Пробуем сменить владельца подпапки
-            await switchOwner(drive, uploadFolderId, targetOwnerEmail);
+            await switchOwner(drive, uploadFolderId, targetOwnerEmail, targetDomain);
         }
     }else{
         uploadFolderId = targetFolderId;
@@ -280,7 +364,7 @@ export async function uploadWithAuth(authClient: google_auth_library.JWT,
 
     // Пробуем сменить владельца файлов
     const uploadedFileIds = uploadResults.map((info) => { return info.id; });
-    await switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail);
+    await switchOwnerForFiles(drive, uploadedFileIds, targetOwnerEmail, targetDomain);
 
     return {
         uploadLinks: uploadResults,

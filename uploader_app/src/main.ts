@@ -127,7 +127,7 @@ async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName:
 
 async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKey: string, 
                               inputFiles: string[], 
-                              targetFolderId: string, targetSubFolderName: string, targetOwnerEmail: string): Promise<UploadResult>{
+                              targetFolderId: string, targetSubFolderName: string, targetOwnerEmail: string, targetDomain: string): Promise<UploadResult>{
     if (!googleEmail || !googleKeyId || !googleKey || !inputFiles || !targetFolderId){
         throw Error("Missing google drive enviroment variables");
     }
@@ -136,14 +136,15 @@ async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKe
         // Создание аутентифицации из параметров
         // https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
         const scopes = [
-            //"https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
+            "https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
             "https://www.googleapis.com/auth/drive",        // Работа со всеми файлами на диске
         ];
         const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
+        //authClient.fromAPIKey("AIzaSyAKAM-ktgSXkTi_EcpZ9FMYz8aLFcPMkIA");
 
         const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
-        const uploadResults = await gdrive_uploader.uploadWithAuth(authClient, targetOwnerEmail, targetFolderId, targetSubFolderName, inputFiles, progressCb);
+        const uploadResults = await gdrive_uploader.uploadWithAuth(authClient, targetOwnerEmail, targetDomain, targetFolderId, targetSubFolderName, inputFiles, progressCb);
         
         // Сообщение в слак
         let slackMessage = `Google drive links for folder (${uploadResults.targetFolder}):\n`;
@@ -281,6 +282,7 @@ async function main() {
     commander.option("--google_drive_target_folder_id <folder_id>", "Target Google drive folder ID");
     commander.option("--google_drive_target_subfolder_name <folder_name>", "Target Google drive subfolder name");
     commander.option("--google_drive_target_owner_email <email>", "Target Google drive folder owner email");
+    commander.option("--google_drive_target_domain <domain>", "Target Google drive shared domain");
     commander.option("--google_play_upload_file <file_path>", "File path for google play uploading");
     commander.option("--google_play_target_track <target_track>", "Target track for google play build");
     commander.option("--google_play_package_name <package>", "Package name for google play uploading: com.gameinsight.gplay.island2");
@@ -303,6 +305,7 @@ async function main() {
     const googleDriveFolderId : string= commander.google_drive_target_folder_id;
     const googleDriveTargetSubFolderName: string = commander.google_drive_target_subfolder_name;
     const googleDriveTargetOwnerEmail: string = commander.google_drive_target_owner_email;
+    const googleDriveTargetDomain: string = commander.google_drive_target_domain;
     const googlePlayUploadFile: string = commander.google_play_upload_file;
     const googlePlayTargetTrack: string = commander.google_play_target_track;
     const googlePlayPackageName: string = commander.google_play_package_name;
@@ -368,7 +371,7 @@ async function main() {
             googleDriveEmail, googleDriveKeyId, googleDriveKey, 
             googleDriveFiles, 
             googleDriveFolderId, googleDriveTargetSubFolderName, 
-            googleDriveTargetOwnerEmail);
+            googleDriveTargetOwnerEmail, googleDriveTargetDomain);
         allPromises.add(uploadProm);
     }
 

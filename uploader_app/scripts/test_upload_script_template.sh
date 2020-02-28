@@ -29,7 +29,8 @@ export SLACK_CHANNEL=""
 # node build/app/main.js \
 #     --google_drive_files "/Users/devnul/Desktop/logs.txt","/Users/devnul/Desktop/screenshot.png" \
 #     --google_drive_target_folder_id "1ziMxgtRz9gzwm7NVEO--WxPXY5rcxpJY" \
-#     --google_drive_target_owner_email "veselov@game-insight.com"
+#     --google_drive_target_owner_email "veselov@game-insight.com" \
+#     --google_drive_target_domain "game-insight.com"
 
 # SSH
 # node build/app/main.js \
