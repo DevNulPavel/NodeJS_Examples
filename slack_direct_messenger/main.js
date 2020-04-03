@@ -45,10 +45,9 @@ async function main() {
     // Slack direct
     if (slackUser || slackUserEmail) {
         await sendTextToSlackUser(slackApiToken, slackUser, slackUserEmail, slackUserText, slackUserQRTextCommentary, slackUserQRText);
-    }else if(slackChannel){
+    }
+    if(slackChannel){
         await sendTextToSlackChannel(slackApiToken, slackChannel, slackChannelText, slackChannelQRTextCommentary, slackChannelQRText);
-    }else{
-        throw Error("User name or user email is missing");
     }
 }
 
