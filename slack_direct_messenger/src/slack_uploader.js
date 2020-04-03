@@ -180,6 +180,57 @@ async function findUserIdByName(apiToken, user) {
     return null;
 }
 
+async function sendText(request, apiToken, channelIdVal, text){
+    //console.log("Send text:", text);
+    await request({
+        url: "https://slack.com/api/chat.postMessage",
+        method: "POST",
+        json: true,
+        auth: {
+            bearer: apiToken // Разворачивается в "headers"{ "Authorization": "Bearer "+accessToken }
+        },
+        formData: {
+            "channel": channelIdVal,
+            "text": text,
+        }
+    });
+}
+
+async function sendQrCode(request, apiToken, channelIdVal, qrText, qrTextCommentary){
+    //console.log("Send qr:", qrText);
+
+    // Temp file
+    const tempId = uuid.v4();
+    const filename = `${tempId}.png`;
+    const tempFilePath = path.join(os.tmpdir(), filename);
+
+    // QRCode
+    const qrConfig = {
+        errorCorrectionLevel: "H"
+    };
+    await qrcode.toFile(tempFilePath, qrText, qrConfig);
+
+    // Direct message send
+    try {
+        const fileStream = fs.createReadStream(tempFilePath);
+        await request({
+            url: "https://slack.com/api/files.upload",
+            method: "POST",
+            formData: {
+                "token": apiToken,
+                "channels": channelIdVal,
+                "initial_comment": qrTextCommentary ? qrTextCommentary : qrText,
+                "file": fileStream,
+                "filename": filename
+            }
+        });
+    }
+    finally {
+        // Temp file delete
+        fs.unlinkSync(tempFilePath);
+    }
+}
+
 async function sendTextToSlackUser(apiToken, user, email, text, qrTextCommentary, qrText) {
     // User id receive
     let userId = await findUserIdByEmail(apiToken, email);
@@ -208,58 +259,30 @@ async function sendTextToSlackUser(apiToken, user, email, text, qrTextCommentary
     //console.log("Channel id:", channelIdVal);
 
     if (text) {
-        //console.log("Send text:", text);
-        await request({
-            url: "https://slack.com/api/chat.postMessage",
-            method: "POST",
-            json: true,
-            auth: {
-                bearer: apiToken // Разворачивается в "headers"{ "Authorization": "Bearer "+accessToken }
-            },
-            formData: {
-                "channel": channelIdVal,
-                "text": text,
-            }
-        });
+        await sendText(request, apiToken, channelIdVal, text);
     }
 
     if (qrText) {
-        //console.log("Send qr:", qrText);
+        await sendQrCode(request, apiToken, channelIdVal, qrText, qrTextCommentary);
+    }
+    return {};
+}
 
-        // Temp file
-        const tempId = uuid.v4();
-        const filename = `${tempId}.png`;
-        const tempFilePath = path.join(os.tmpdir(), filename);
+async function sendTextToSlackChannel(apiToken, channel, text, qrTextCommentary, qrText) {
+    const channelIdVal = channel;
+    //console.log("Channel id:", channelIdVal);
 
-        // QRCode
-        const qrConfig = {
-            errorCorrectionLevel: "H"
-        };
-        await qrcode.toFile(tempFilePath, qrText, qrConfig);
+    if (text) {
+        await sendText(request, apiToken, channelIdVal, text);
+    }
 
-        // Direct message send
-        try {
-            const fileStream = fs.createReadStream(tempFilePath);
-            await request({
-                url: "https://slack.com/api/files.upload",
-                method: "POST",
-                formData: {
-                    "token": apiToken,
-                    "channels": channelIdVal,
-                    "initial_comment": qrTextCommentary ? qrTextCommentary : qrText,
-                    "file": fileStream,
-                    "filename": filename
-                }
-            });
-        }
-        finally {
-            // Temp file delete
-            fs.unlinkSync(tempFilePath);
-        }
+    if (qrText) {
+        await sendQrCode(request, apiToken, channelIdVal, qrText, qrTextCommentary);
     }
     return {};
 }
 
 module.exports = { 
-    sendTextToSlackUser 
+    sendTextToSlackUser,
+    sendTextToSlackChannel
 };
