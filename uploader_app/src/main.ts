@@ -42,6 +42,12 @@ interface UploadResult{
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+function async_sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 function replaceAllInString(input: string, old: string, newVal: string): string{
     if(!input){
         return input;
@@ -83,16 +89,22 @@ async function calculateTotalUploadsSize(filesPaths: Array<string>): Promise<num
 async function uploadInAmazon(amazonClientId: string, amazonClientSecret: string, amazonAppId: string, amazonInputFile: string): Promise<UploadResult> {
     validateArgumentsLambda("Missing amazon input variables", arguments);
 
-    try{
-        const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
-        await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
-        return {
-            message: `Uploaded on Amazon:\n- ${path.basename(amazonInputFile)}`
-        };
-    }catch(err){
-        const slackMessage = `Amazon uploading failed with error:\n${err}`;
-        return { message: slackMessage };
+    // Делаем 5 попыток
+    let last_err = null;
+    for (let index = 0; index < 5; index++) {
+        try{
+            const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+            await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
+            return {
+                message: `Uploaded on Amazon:\n- ${path.basename(amazonInputFile)}`
+            };
+        }catch(err){
+            last_err = err;
+            await async_sleep(1000 * 15);
+        }
     }
+    const slackMessage = `Amazon uploading failed with error:\n${last_err}`;
+    return { message: slackMessage };
 }
 
 async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName: string, appCenterAppOwnerName: string, 
@@ -101,28 +113,34 @@ async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName:
         throw Error("Missing appcenter input variables");
     }
 
-    try{
-        const withSymbolsUploading: boolean = app_center_uploader.isSymbolsUploadingSupported(inputFile, symbolsFile);
-        const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
-        await app_center_uploader.uploadToHockeyApp(
-            appCenterAccessToken, 
-            appCenterAppName, 
-            appCenterAppOwnerName, 
-            inputFile, 
-            withSymbolsUploading, 
-            symbolsFile, 
-            progressCb); // Нужен ли интерактивный режим?
-        
-        const message: string = withSymbolsUploading ? 
-            `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
-            `Uploaded on App center:\n- ${path.basename(inputFile)}`;
-        return {
-            message: message
-        };
-    }catch(err){
-        const slackMessage = `App center uploading failed with error:\n${err}`;
-        return { message: slackMessage };
+    // Делаем 5 попыток
+    let last_err = null;
+    for (let index = 0; index < 5; index++) {
+        try{
+            const withSymbolsUploading: boolean = app_center_uploader.isSymbolsUploadingSupported(inputFile, symbolsFile);
+            const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+            await app_center_uploader.uploadToHockeyApp(
+                appCenterAccessToken, 
+                appCenterAppName, 
+                appCenterAppOwnerName, 
+                inputFile, 
+                withSymbolsUploading, 
+                symbolsFile, 
+                progressCb); // Нужен ли интерактивный режим?
+            
+            const message: string = withSymbolsUploading ? 
+                `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
+                `Uploaded on App center:\n- ${path.basename(inputFile)}`;
+            return {
+                message: message
+            };
+        }catch(err){
+            last_err = err;
+            await async_sleep(1000 * 15);
+        }
     }
+    const slackMessage = `App center uploading failed with error:\n${last_err}`;
+    return { message: slackMessage };
 }
 
 async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKey: string, 
@@ -132,33 +150,39 @@ async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKe
         throw Error("Missing google drive enviroment variables");
     }
 
-    try{
-        // Создание аутентифицации из параметров
-        // https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
-        const scopes = [
-            "https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
-            "https://www.googleapis.com/auth/drive",        // Работа со всеми файлами на диске
-        ];
-        const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
+    // Делаем 5 попыток
+    let last_err = null;
+    for (let index = 0; index < 5; index++) {
+        try{
+            // Создание аутентифицации из параметров
+            // https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
+            const scopes = [
+                "https://www.googleapis.com/auth/drive.file",     // Работа с файлами, созданными текущим приложением
+                "https://www.googleapis.com/auth/drive",        // Работа со всеми файлами на диске
+            ];
+            const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
 
-        const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+            const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
 
-        const uploadResults = await gdrive_uploader.uploadWithAuth(authClient, targetOwnerEmail, targetDomain, targetFolderId, targetSubFolderName, inputFiles, progressCb);
-        
-        // Сообщение в слак
-        let slackMessage = `Google drive links for folder (${uploadResults.targetFolder}):\n`;
-        for(let i = 0; i < uploadResults.uploadLinks.length; i++){
-            const uploadInfo: any  = uploadResults.uploadLinks[i];
-            slackMessage += `- ${uploadInfo.srcFilePath}: ${uploadInfo.webViewLink}\n`;
-            //console.log(`Download url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}`);
-            //console.log(`Web view url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webViewLink}`); 
+            const uploadResults = await gdrive_uploader.uploadWithAuth(authClient, targetOwnerEmail, targetDomain, targetFolderId, targetSubFolderName, inputFiles, progressCb);
+            
+            // Сообщение в слак
+            let slackMessage = `Google drive links for folder (${uploadResults.targetFolder}):\n`;
+            for(let i = 0; i < uploadResults.uploadLinks.length; i++){
+                const uploadInfo: any  = uploadResults.uploadLinks[i];
+                slackMessage += `- ${uploadInfo.srcFilePath}: ${uploadInfo.webViewLink}\n`;
+                //console.log(`Download url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webContentLink}`);
+                //console.log(`Web view url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webViewLink}`); 
+            }
+
+            return { message: slackMessage };
+        }catch(err){
+            last_err = err;
+            await async_sleep(1000 * 15);
         }
-
-        return { message: slackMessage };
-    }catch(err){
-        const slackMessage = `Google drive uploading failed with error:\n${err}`;
-        return { message: slackMessage };
     }
+    const slackMessage = `Google drive uploading failed with error:\n${last_err}`;
+    return { message: slackMessage };
 }
 
 async function uploadInGPlay(googleEmail: string, googleKeyId: string, 
@@ -167,64 +191,85 @@ async function uploadInGPlay(googleEmail: string, googleKeyId: string,
     if (!googleEmail || !googleKeyId || !googleKey || !inputFile || !packageName){
         throw Error("Missing google play enviroment variables");
     }    
-
-    try{
-        // Создание аутентифицации из параметров
-        const scopes = [ "https://www.googleapis.com/auth/androidpublisher" ];
-        const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
-        const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
-        await gplay_uploader.uploadBuildWithAuth(authClient, packageName, inputFile, targetTrack, progressCb);
-        return {
-            message: `Uploaded on Google Play:\n- ${path.basename(inputFile)}`
-        };
-    }catch(err){
-        const slackMessage = `Google play uploading failed with error:\n${err}`;
-        return { message: slackMessage };
+    // Делаем 5 попыток
+    let last_err = null;
+    for (let index = 0; index < 5; index++) {
+        try{        // Создание аутентифицации из параметров
+            const scopes = [ "https://www.googleapis.com/auth/androidpublisher" ];
+            const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
+            const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+            await gplay_uploader.uploadBuildWithAuth(authClient, packageName, inputFile, targetTrack, progressCb);
+            return {
+                message: `Uploaded on Google Play:\n- ${path.basename(inputFile)}`
+            };
+        }catch(err){
+            last_err = err;
+            await async_sleep(1000 * 15);
+        }
     }
+    const slackMessage = `Google play uploading failed with error:\n${last_err}`;
+    return { message: slackMessage };
 }
 
 async function uploadInIOSStore(iosUser: string, iosPass: string, ipaToIOSAppStore: string){
     validateArgumentsLambda("Missing iOS enviroment variables", arguments);
-
-    try{
-        await ios_uploader.uploadToIOSAppStore(iosUser, iosPass, ipaToIOSAppStore);
-        return {
-            message: `Uploaded on iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
-        };
-    }catch(err){
-        const slackMessage = `iOS uploading failed with error:\n${err}`;
-        return { message: slackMessage };
+    // Делаем 5 попыток
+    let last_err = null;
+    for (let index = 0; index < 5; index++) {
+        try{
+            await ios_uploader.uploadToIOSAppStore(iosUser, iosPass, ipaToIOSAppStore);
+            return {
+                message: `Uploaded on iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
+            };
+        }catch(err){
+            last_err = err;
+            await async_sleep(1000 * 15);
+        }
     }
+    const slackMessage = `iOS uploading failed with error:\n${last_err}`;
+    return { message: slackMessage };
 }
 
 async function uploadFilesBySSH(sshServerName: string, sshUser: string, sshPass: string, sshPrivateKeyFilePath: string, 
                                 sshUploadFiles: string[], sshTargetDir: string): Promise<UploadResult>{
     validateArgumentsLambda("Missing SSH enviroment variables", arguments);
                                     
-    try{
-        const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
-        await ssh_uploader.uploadBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir, progressCb);
-        const filesNames = sshUploadFiles.map((filename)=>{
-            return path.basename(filename);
-        }).join("\n- ");
-        return {
-            message: `Uploaded on Samba (${sshTargetDir}):\n- ${filesNames}`
-        };
-    }catch(err){
-        const slackMessage = `Samba uploading failed with error:\n${err}`;
-        return { message: slackMessage };
+    // Делаем 5 попыток
+    let last_err = null;
+    for (let index = 0; index < 5; index++) {
+        try{
+            const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+            await ssh_uploader.uploadBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir, progressCb);
+            const filesNames = sshUploadFiles.map((filename)=>{
+                return path.basename(filename);
+            }).join("\n- ");
+            return {
+                message: `Uploaded on Samba (${sshTargetDir}):\n- ${filesNames}`
+            };
+        }catch(err){
+            last_err = err;
+            await async_sleep(1000 * 15);
+        }
     }
+    const slackMessage = `Samba uploading failed with error:\n${last_err}`;
+    return { message: slackMessage };
 }
 
 async function uploadFilesToSlack(slackApiToken: string, slackChannel: string, uploadFiles: string[]): Promise<UploadResult>{
-    try{
-        const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
-        await slack_uploader.uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles, progressCb);
-        return {};
-    }catch(err){
-        const slackMessage = `Slack uploading failed with error:\n${err}`;
-        return { message: slackMessage };
+    // Делаем 5 попыток
+    let last_err = null;
+    for (let index = 0; index < 5; index++) {
+        try{
+            const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
+            await slack_uploader.uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles, progressCb);
+            return {};
+        }catch(err){
+            last_err = err;
+            await async_sleep(1000 * 15);
+        }
     }
+    const slackMessage = `Slack uploading failed with error:\n${last_err}`;
+    return { message: slackMessage };
 }
 
 async function sendTextToSlackUser(slackApiToken: string, slackUser: string, slackUserEmail: string, slackUserText: string, slackUserQRTextCommentary: string, slackUserQrText: string){
