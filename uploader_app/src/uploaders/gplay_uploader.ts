@@ -60,6 +60,7 @@ async function uploadBuild(publisher, editId, uploadFile, packageName, progressC
     const uploadParams = {
         editId: editId,
         packageName: packageName,
+        ackBundleInstallationWarning: true,
         media: {
             //mimeType: mimeType, // TODO: Нужно ли?
             body: fileStream,
