@@ -60,13 +60,20 @@ export async function uploadBySSH(serverName: string, user: string, pass: string
         const onReadyFunc = async ()=>{
             let serverDir = paramServerDir;
             
-            //console.log("ssh on ready");
+            // console.log("ssh on ready");
             try{
                 // Если путь относительно домашней папки, то надо обновить путь до абсолютного
                 if(serverDir.startsWith("~")){
+                    // console.log("ssh get user");
                     // eslint-disable-next-line promise/param-names
                     const getHomeFolderProm = new Promise<string>((localResolve, localReject)=>{
                         client.exec("echo ~$USER", (err, chan)=>{
+                            if(!chan || err){
+                                localReject(err);
+                                // console.log("ssh get user failed");
+                                return;
+                            }
+
                             chan.on("data", (data)=>{
                                 const dataStr = data.toString().replace("\n", "");
                                 localResolve(dataStr);
@@ -80,7 +87,7 @@ export async function uploadBySSH(serverName: string, user: string, pass: string
                     serverDir = serverDir.replace("~", homeFolderPath);
                 }
                 
-                //console.log("sftp");
+                // console.log("sftp");
 
                 /*const ok = client.sftp((err, sftp)=>{
                     setTimeout(()=>{
@@ -93,7 +100,7 @@ export async function uploadBySSH(serverName: string, user: string, pass: string
                         // https://github.com/mscdex/ssh2-streams/blob/master/SFTPStream.md
                         let uploadConfig = {
                             concurrency: 1,
-                            chunkSize: 1024 * 4
+                            chunkSize: 1024 * 8
                         };
                         if(progressCb){
                             const fileUploadProgressCb = (totalTransfered, chunkSize)=>{
@@ -146,14 +153,14 @@ export async function uploadBySSH(serverName: string, user: string, pass: string
                 try{
                     // Если папка уже есть, то OK
                     await mkdirFunc(serverDir);
-                    //console.log("ssh makedir");
+                    // console.log("ssh makedir");
                 }catch(err){
                 }
 
                 // https://github.com/mscdex/ssh2-streams/blob/master/SFTPStream.md
                 let uploadConfig = {
-                    concurrency: 8,
-                    chunkSize: 1024 * 32
+                    concurrency: 1,
+                    chunkSize: 1024 * 8
                 };
                 if(progressCb){
                     const fileUploadProgressCb = (totalTransfered, chunkSize)=>{
