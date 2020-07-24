@@ -93,12 +93,15 @@ async function uploadInAmazon(amazonClientId: string, amazonClientSecret: string
     let last_err = null;
     for (let index = 0; index < 5; index++) {
         try{
+            console.log("Amazon uploading started");
             const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
             await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
+            console.log("Amazon uploading finished");
             return {
                 message: `Uploaded on Amazon:\n- ${path.basename(amazonInputFile)}`
             };
         }catch(err){
+            console.log("Amazon uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }
@@ -117,6 +120,7 @@ async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName:
     let last_err = null;
     for (let index = 0; index < 5; index++) {
         try{
+            console.log("App center uploading started");
             const withSymbolsUploading: boolean = app_center_uploader.isSymbolsUploadingSupported(inputFile, symbolsFile);
             const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
             await app_center_uploader.uploadToHockeyApp(
@@ -131,10 +135,13 @@ async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName:
             const message: string = withSymbolsUploading ? 
                 `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
                 `Uploaded on App center:\n- ${path.basename(inputFile)}`;
+
+            console.log("App center uploading finished");
             return {
                 message: message
             };
         }catch(err){
+            console.log("App center uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }
@@ -154,6 +161,8 @@ async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKe
     let last_err = null;
     for (let index = 0; index < 5; index++) {
         try{
+            console.log("Google drive uploading started");
+
             // Создание аутентифицации из параметров
             // https://developers.google.com/identity/protocols/googlescopes#driveactivityv2
             const scopes = [
@@ -175,8 +184,10 @@ async function uploadInGDrive(googleEmail: string, googleKeyId: string, googleKe
                 //console.log(`Web view url for file "${uploadInfo.srcFilePath}": ${uploadInfo.webViewLink}`); 
             }
 
+            console.log("Google drive uploading finished");
             return { message: slackMessage };
         }catch(err){
+            console.log("Google drive uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }
@@ -195,14 +206,17 @@ async function uploadInGPlay(googleEmail: string, googleKeyId: string,
     let last_err = null;
     for (let index = 0; index < 5; index++) {
         try{        // Создание аутентифицации из параметров
+            console.log("Google play uploading started");
             const scopes = [ "https://www.googleapis.com/auth/androidpublisher" ];
             const authClient = await google_auth.createAuthClientFromInfo(googleEmail, googleKeyId, googleKey, scopes);
             const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
             await gplay_uploader.uploadBuildWithAuth(authClient, packageName, inputFile, targetTrack, progressCb);
+            console.log("Google play uploading finished");
             return {
                 message: `Uploaded on Google Play:\n- ${path.basename(inputFile)}`
             };
         }catch(err){
+            console.log("Google drive uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }
@@ -217,11 +231,14 @@ async function uploadInIOSStore(iosUser: string, iosPass: string, ipaToIOSAppSto
     let last_err = null;
     for (let index = 0; index < 5; index++) {
         try{
+            console.log("IOS uploading started");
             await ios_uploader.uploadToIOSAppStore(iosUser, iosPass, ipaToIOSAppStore);
+            console.log("IOS uploading finished");
             return {
                 message: `Uploaded on iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
             };
         }catch(err){
+            console.log("IOS uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }
@@ -238,15 +255,18 @@ async function uploadFilesBySSH(sshServerName: string, sshUser: string, sshPass:
     let last_err = null;
     for (let index = 0; index < 5; index++) {
         try{
+            console.log("SSH uploading started");
             const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
             await ssh_uploader.uploadBySSH(sshServerName, sshUser, sshPass, sshPrivateKeyFilePath, sshUploadFiles, sshTargetDir, progressCb);
             const filesNames = sshUploadFiles.map((filename)=>{
                 return path.basename(filename);
             }).join("\n- ");
+            console.log("SSH uploading finished");
             return {
                 message: `Uploaded on Samba (${sshTargetDir}):\n- ${filesNames}`
             };
         }catch(err){
+            console.log("IOS uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }
@@ -260,10 +280,13 @@ async function uploadFilesToSlack(slackApiToken: string, slackChannel: string, u
     let last_err = null;
     for (let index = 0; index < 5; index++) {
         try{
+            console.log("Slack uploading started");
             const progressCb = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
             await slack_uploader.uploadFilesToSlack(slackApiToken, slackChannel, uploadFiles, progressCb);
+            console.log("Slack uploading finished");
             return {};
         }catch(err){
+            console.log("Slack uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }
