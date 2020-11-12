@@ -4,7 +4,7 @@ import fs = require("fs");
 import path = require("path");
 import request = require("request-promise-native");
 
-
+//https://openapi.appcenter.ms/#/distribute/releases_update
 //https://docs.microsoft.com/en-us/appcenter/distribution/uploading
 //https://docs.microsoft.com/en-us/appcenter/diagnostics/ios-symbolication
 //https://github.com/microsoft/appcenter/issues/965
@@ -29,7 +29,7 @@ import request = require("request-promise-native");
     return apps;
 }*/
 
-async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath, progressCb) {
+async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGroups, buildFilePath, progressCb) {
     const uploadInfo = await defaultRequest({
         url: `/apps/${appOwnerName}/${appName}/release_uploads`,
         method: "POST",
@@ -50,7 +50,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath,
             progressCb(chunk.length);
         });
     }
-    await request({
+    const uploadRes = await request({
         url: uploadUrl,
         method: "POST",
         formData: { // Чтобы "Content-Type" был "multipart/form-data" в хедерах, просто указываем formData
@@ -59,6 +59,9 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath,
     });
 
     // Коммит отгрузки
+    // Параметры в выводе
+    //     release_id: '17',
+    //     release_url: 'v0.1/apps/Game-Insight-HQ-Organization/QC-Paradise-Island-2-Android/releases/17'
     const uploadCommitInfo = await defaultRequest({
         url: `/apps/${appOwnerName}/${appName}/release_uploads/${uploadId}`,
         method: "PATCH",
@@ -67,9 +70,33 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath,
             "status": "committed"
         }
     });
-    // Параметры в выводе
-    //     release_id: '17',
-    //     release_url: 'v0.1/apps/Game-Insight-HQ-Organization/QC-Paradise-Island-2-Android/releases/17'
+
+    // Активируем на конкретные группы если надо
+    if (distributionGroups && uploadCommitInfo.release_id){
+        const idValue = uploadCommitInfo.release_id;
+
+        let groupsArray = [];
+        for(const index in distributionGroups){
+            groupsArray.push({
+                "name": distributionGroups[index],
+            });
+        }
+
+        try {
+            const distributionResult = await defaultRequest({
+                url: `/apps/${appOwnerName}/${appName}/releases/${idValue}`,
+                method: "PATCH",
+                json: true,
+                body: {
+                    "destinations": groupsArray
+                }
+            });
+            return distributionResult;
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
 
     return uploadCommitInfo;
 }
@@ -120,8 +147,12 @@ async function uploadSymbols(defaultRequest, appOwnerName, appName, symbolsFileP
     return uploadCommitInfo;
 }
 
-export async function uploadToHockeyApp(token: string, appName: string, appOwnerName: string, 
-                                        buildFilePath: string, needSymbolsUploading: boolean, 
+export async function uploadToHockeyApp(token: string, 
+                                        appName: string, 
+                                        appOwnerName: string, 
+                                        distributionGroups: string[], 
+                                        buildFilePath: string, 
+                                        needSymbolsUploading: boolean, 
                                         symbolsFilePath: string, progressCb: (number)=>void) {
     // Базовый конфиг запроса
     const defaultRequest = request.defaults({
@@ -135,7 +166,7 @@ export async function uploadToHockeyApp(token: string, appName: string, appOwner
     const promises = [];
 
     // Грузим билд на сервер
-    const uploadBuildProm = uploadBuild(defaultRequest, appOwnerName, appName, buildFilePath, progressCb);
+    const uploadBuildProm = uploadBuild(defaultRequest, appOwnerName, appName, distributionGroups, buildFilePath, progressCb);
     promises.push(uploadBuildProm);
 
     // Грузим символы на сервер

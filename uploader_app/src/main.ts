@@ -72,11 +72,24 @@ function updateUploadProgress(bytesUploaded: number){
 
 async function calculateTotalUploadsSize(filesPaths: Array<string>): Promise<number>{
     const sizePromises = filesPaths.map((filePath)=>{
-        return fs.promises.stat(filePath).catch((err)=>{ 
+        return new Promise((resolve, reject)=>{
+            fs.stat(filePath, (err, stats)=>{
+                if(!err){
+                    resolve(stats);
+                }else{
+                    reject(err);
+                }
+            });
+        })
+        .catch((err)=>{ 
             console.log(err); 
         });
+        /*return fs.promises.stat(filePath).catch((err)=>{ 
+            console.log(err); 
+        });*/
     });
-    const allStats = await Promise.all(sizePromises);
+    const allStats = await Promise
+        .all(sizePromises);
     const allSizes = allStats.map((stat: fs.Stats)=>{
         return stat.size;
     });
@@ -110,8 +123,12 @@ async function uploadInAmazon(amazonClientId: string, amazonClientSecret: string
     return { message: slackMessage };
 }
 
-async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName: string, appCenterAppOwnerName: string, 
-                                 inputFile: string, symbolsFile: string): Promise<UploadResult>{
+async function uploadInAppCenter(appCenterAccessToken: string, 
+                                 appCenterAppName: string, 
+                                 appCenterAppOwnerName: string, 
+                                 distrubutionGroups: string[], 
+                                 inputFile: string, 
+                                 symbolsFile: string): Promise<UploadResult>{
     if (!appCenterAccessToken || !appCenterAppName || !appCenterAppOwnerName || !inputFile){
         throw Error("Missing appcenter input variables");
     }
@@ -127,6 +144,7 @@ async function uploadInAppCenter(appCenterAccessToken: string, appCenterAppName:
                 appCenterAccessToken, 
                 appCenterAppName, 
                 appCenterAppOwnerName, 
+                distrubutionGroups,
                 inputFile, 
                 withSymbolsUploading, 
                 symbolsFile, 
@@ -345,6 +363,7 @@ async function main() {
     commander.option("--amazon_input_file <input apk>", "Input file for amazon uploading");
     commander.option("--app_center_input_file <input .apk or .ipa>", "Input file for app center uploading");
     commander.option("--app_center_symbols_file <input .dSYM.zip>", "Input symbols archive for app center uploading");
+    commander.option("--app_center_distribution_groups <comma_separeted_groups>", "App center distribution groups: 'group1','group2'", commaSeparatedList);
     commander.option("--google_drive_files <comma_separeted_file_paths>", "Input files for uploading: -gdrivefiles 'file1','file2'", commaSeparatedList);
     commander.option("--google_drive_target_folder_id <folder_id>", "Target Google drive folder ID");
     commander.option("--google_drive_target_subfolder_name <folder_name>", "Target Google drive subfolder name");
@@ -368,6 +387,7 @@ async function main() {
     const amazonInputFile: string = commander.amazon_input_file;
     const appCenterFile: string = commander.app_center_input_file;
     const appCenterSymbols: string = commander.app_center_symbols_file;
+    const appCenterdistributionGroups: string[] = commander.app_center_distribution_groups;
     const googleDriveFiles: string[] = commander.google_drive_files;
     const googleDriveFolderId : string= commander.google_drive_target_folder_id;
     const googleDriveTargetSubFolderName: string = commander.google_drive_target_subfolder_name;
@@ -410,7 +430,7 @@ async function main() {
         }
         // Отбрасываем пустые
         filesList = filesList.filter(val => {
-            return val !== undefined;
+            return (val != null) && (val != undefined);
         });
         // Считаем размер
         totalBytes = await calculateTotalUploadsSize(filesList);
@@ -428,7 +448,7 @@ async function main() {
 
     // App center
     if(appCenterFile){
-        const uploadProm = uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, appCenterFile, appCenterSymbols);
+        const uploadProm = uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, appCenterdistributionGroups, appCenterFile, appCenterSymbols);
         allPromises.add(uploadProm);
     }
 
@@ -476,9 +496,16 @@ async function main() {
     allPromises.forEach((prom: Promise<UploadResult>)=>{
         // Прописываем удаление из Set при завершении промиса
         // eslint-disable-next-line promise/catch-or-return
-        prom.finally(()=>{
+        prom.catch((err)=>{
+                console.log(err);
+            });
+        prom.then(()=>{
             allPromises.delete(prom);
         });
+        // UnhandledPromiseRejectionWarning: Unhandled promise rejection (rejection id: 1): TypeError: prom.finally is not a function
+        /*prom.finally(()=>{
+            allPromises.delete(prom);
+        });*/
     });
     while(allPromises.size > 0){
         const result: UploadResult = await Promise.race(allPromises);

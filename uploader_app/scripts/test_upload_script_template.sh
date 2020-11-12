@@ -44,6 +44,7 @@ export SLACK_CHANNEL=""
 # App center
 # node build/app/main.js \
 #     --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa"
+#     --app_center_distribution_groups "17-Bullets","All-users-of-Mystery-Manor-xGen-iOS-PK","Collaborators","Gi-All-Limited","Gi-QA"
 
 # All
 # node build/app/main.js \

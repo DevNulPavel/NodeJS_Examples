@@ -6,6 +6,8 @@ const util = require("util");
 // https://api.slack.com/rtm
 // https://slack.dev/node-slack-sdk/rtm-api
 // https://api.slack.com/dialogs
+// https://api.slack.com/interactivity/slash-commands
+// https://api.slack.com/interactivity/handling#responses
 
 function errorHandler(message){
     console.error(message);
