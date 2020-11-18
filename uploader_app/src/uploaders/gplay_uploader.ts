@@ -72,7 +72,7 @@ async function uploadBuild(publisher, editId, uploadFile, packageName, progressC
     return uploadedVersion;
 }
 
-/*async function updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName){
+async function updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName){
     const updateTrackConfig = {
         packageName: packageName,
         editId: editId,
@@ -89,7 +89,7 @@ async function uploadBuild(publisher, editId, uploadFile, packageName, progressC
     const updateTrackRes = await publisher.edits.tracks.update(updateTrackConfig);
 
     return updateTrackRes.data;
-}*/
+}
 
 async function validateParams(publisher, editId, packageName){
     const validateParams = {
@@ -119,18 +119,18 @@ export async function uploadBuildWithAuth(authClient: google_auth_library.JWT,
     //console.log(`Edit id: ${editId}`);
 
     // Старт загрузки
-    await uploadBuild(publisher, editId, uploadFile, packageName, progressCb); // Возвращает uploadedVersion 
+    const uploadedVersion = await uploadBuild(publisher, editId, uploadFile, packageName, progressCb); // Возвращает uploadedVersion 
     //console.log(`Uploaded version: ${uploadedVersion}`);
 
     // Обновляем track
-    if(targetTrack){
+    if(targetTrack && (targetTrack.length > 0)){
         // Сейчас отключено обновление трека
-        /*try{
-            await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName);
-            console.log("Update track res:", updateTrackRes);    
+        try{
+            const updateTrackRes = await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName);
+            console.log("Update track result: ", updateTrackRes);    
         }catch(err){
-            console.log(err);
-        }*/
+            console.log("Update track failed: ", err);
+        }
     }
 
     // Делаем валиацию
