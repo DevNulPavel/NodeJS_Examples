@@ -9,6 +9,7 @@ import google_auth_library = require("google-auth-library");
 //http://frontendcollisionblog.com/javascript/2015/12/26/using-nodejs-to-upload-app-to-google-play.html
 //https://googleapis.dev/nodejs/googleapis/latest/androidpublisher/classes/Resource$Edits$Apks-1.html#upload
 //https://stackoverflow.com/questions/48274009/cant-upload-apk-to-google-play-developer-via-publisher-api
+//https://developers.google.com/android-publisher/api-ref/rest/v3/edits.tracks/update
 
 
 function createPublisher(authClient, packageName){
@@ -73,6 +74,9 @@ async function uploadBuild(publisher, editId, uploadFile, packageName, progressC
 }
 
 async function updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName){
+    // https://developers.google.com/android-publisher/api-ref/rest/v3/edits.tracks#Release
+    // https://developers.google.com/android-publisher/api-ref/rest/v3/edits.tracks#status
+
     const updateTrackConfig = {
         packageName: packageName,
         editId: editId,
@@ -81,7 +85,21 @@ async function updateBuildTrack(publisher, editId, uploadedVersion, targetTrack,
             track: targetTrack,
             releases: [
                 {
-                    versionCodes: uploadedVersion
+                    //name: "Test",
+                    versionCodes: [
+                        uploadedVersion
+                    ],
+                    releaseNotes: [
+                    ],
+                    // status: "draft", 
+                    status: "completed", 
+                    //userFraction: 1.0,
+                    countryTargeting: {
+                        countries: [
+                        ],
+                        includeRestOfWorld: true
+                    },
+                    inAppUpdatePriority: 5
                 }
             ]
         }
@@ -125,16 +143,12 @@ export async function uploadBuildWithAuth(authClient: google_auth_library.JWT,
     // Обновляем track
     if(targetTrack && (targetTrack.length > 0)){
         // Сейчас отключено обновление трека
-        try{
-            const updateTrackRes = await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName);
-            console.log("Update track result: ", updateTrackRes);    
-        }catch(err){
-            console.log("Update track failed: ", err);
-        }
+        const updateTrackRes = await updateBuildTrack(publisher, editId, uploadedVersion, targetTrack, packageName);
+        //console.log("Update track result: ", updateTrackRes);
     }
 
     // Делаем валиацию
-    await validateParams(publisher, editId, packageName); // Возвращает validateResult 
+    const validateResult = await validateParams(publisher, editId, packageName); // Возвращает validateResult 
     //console.log("Validate res:", validateResult);
 
     // Коммитим изменения

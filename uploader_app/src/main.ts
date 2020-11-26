@@ -234,7 +234,7 @@ async function uploadInGPlay(googleEmail: string, googleKeyId: string,
                 message: `Uploaded on Google Play:\n- ${path.basename(inputFile)}`
             };
         }catch(err){
-            console.log("Google drive uploading failed, repeat after 15 seconds");
+            console.log("Google play uploading failed, repeat after 15 seconds");
             last_err = err;
             await async_sleep(1000 * 15);
         }

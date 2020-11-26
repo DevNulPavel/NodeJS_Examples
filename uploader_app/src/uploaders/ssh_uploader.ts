@@ -181,7 +181,7 @@ export async function uploadBySSH(serverName: string, user: string, pass: string
                     await fastPutFunc(localFilePath, remoteFilePath, uploadConfig);
                 }
         
-                resolve();
+                resolve(null);
                 client.end();
             }catch(err){
                 reject(err);
