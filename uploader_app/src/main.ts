@@ -140,7 +140,7 @@ async function uploadInAppCenter(appCenterAccessToken: string,
             console.log("App center uploading started");
             const withSymbolsUploading: boolean = app_center_uploader.isSymbolsUploadingSupported(inputFile, symbolsFile);
             const progressCb: (number)=>void = process.stdout.isTTY ? updateUploadProgress : undefined; // Нужен ли интерактивный режим?
-            await app_center_uploader.uploadToHockeyApp(
+            let upload_result = await app_center_uploader.uploadToHockeyApp(
                 appCenterAccessToken, 
                 appCenterAppName, 
                 appCenterAppOwnerName, 
@@ -150,9 +150,19 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                 symbolsFile, 
                 progressCb); // Нужен ли интерактивный режим?
             
-            const message: string = withSymbolsUploading ? 
-                `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
-                `Uploaded on App center:\n- ${path.basename(inputFile)}`;
+            let url = null;
+            if(upload_result && upload_result.length > 1 && upload_result[0].release_url){
+                url = upload_result[0].release_url;
+            }
+
+            let message: string = null;
+            if (url){
+                message = `Uploaded on App center:\n- ${url}`;
+            }else{
+                message = withSymbolsUploading ? 
+                    `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
+                    `Uploaded on App center:\n- ${path.basename(inputFile)}`;
+            }
 
             console.log("App center uploading finished");
             return {
@@ -346,7 +356,10 @@ async function main() {
     const sshPass = process.env["SSH_PASS"];
     const sshPrivateKeyFilePath = process.env["SSH_PRIVATE_KEY_PATH"];
     const slackApiToken = process.env["SLACK_API_TOKEN"];
-    const slackChannel = process.env["SLACK_CHANNEL"];
+    const resultSlackChannel = process.env["SLACK_CHANNEL"];
+    const resultSlackTextPrefix = process.env["SLACK_TEXT_PREFIX"];
+    const resultSlackUser = process.env["SLACK_USER"];
+    const resultSlackEmail = process.env["SLACK_EMAIL"];
 
     // Фиксим данные из окружения
     const googlePlayKey = replaceAllInString(googlePlayKeyRaw, "\\n", "\n");
@@ -376,12 +389,12 @@ async function main() {
     commander.option("--ssh_upload_files <comma_separeted_file_paths>", "Input files for uploading: -sshfiles='file1','file2'", commaSeparatedList);
     commander.option("--ssh_target_server_dir <dir>", "Target server directory for files");
     commander.option("--slack_upload_files <comma_separeted_file_paths>", "Input files for uploading: -slackfiles='file1','file2'", commaSeparatedList);
+    commander.option("--slack_upload_channel <channel>", "Slack upload files channel");
     commander.option("--slack_user <user>", "Slack user name for direct messages");
     commander.option("--slack_user_email <user_email>", "Slack user email for direct messages");
     commander.option("--slack_user_text <text>", "Slack direct message text");
     commander.option("--slack_user_qr_commentary <text>", "Slack direct QR code commentary");
     commander.option("--slack_user_qr_text <text>", "Slack direct QR code content");
-    commander.option("--slack_text_prefix <text>", "Prefix for slack channel message");
     commander.parse(process.argv);
 
     const amazonInputFile: string = commander.amazon_input_file;
@@ -400,12 +413,12 @@ async function main() {
     const sshUploadFiles: string[] = commander.ssh_upload_files;
     const sshTargetDir: string = commander.ssh_target_server_dir;
     const slackUploadFiles: string[] = commander.slack_upload_files;
+    const slackUploadChannel: string = commander.slack_upload_channel;
     const slackUser: string = commander.slack_user;
     const slackUserEmail: string = commander.slack_user_email;
     const slackUserText: string = commander.slack_user_text;
     const slackUserQRTextCommentary: string = commander.slack_user_qr_commentary;
     const slackUserQRText: string = commander.slack_user_qr_text;
-    const slackTextPrefix: string = commander.slack_text_prefix;
 
     //////////////////////////////////////////////////////////////////////////////
 
@@ -481,8 +494,8 @@ async function main() {
     }
 
     // Slack
-    if(slackUploadFiles){
-        const uploadProm = uploadFilesToSlack(slackApiToken, slackChannel, slackUploadFiles);
+    if(slackUploadFiles && slackUploadChannel){
+        const uploadProm = uploadFilesToSlack(slackApiToken, slackUploadChannel, slackUploadFiles);
         allPromises.add(uploadProm);
     }
 
@@ -511,12 +524,21 @@ async function main() {
         const result: UploadResult = await Promise.race(allPromises);
         if(result.message !== undefined){
             let message = null;
-            if (slackTextPrefix){
-                message = slackTextPrefix + " " + "```" + result.message + "```";
+            if (resultSlackTextPrefix){
+                message = resultSlackTextPrefix + " " + "```" + result.message + "```";
             }else{
                 message = "```" + result.message + "```";
             }
-            slack_uploader.sendMessageToSlack(slackApiToken, slackChannel, message);
+
+            // Помимо канала - пишем сообщения в канал
+            if (resultSlackChannel){
+                await slack_uploader.sendMessageToSlack(slackApiToken, resultSlackChannel, message);
+            }
+
+            // Помимо канала - пишем сообщения в личку тоже
+            if(resultSlackUser || resultSlackEmail){
+                await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, message, null, null);
+            }
         }
     }
 }
