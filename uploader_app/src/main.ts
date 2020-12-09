@@ -154,6 +154,7 @@ async function uploadInAppCenter(appCenterAccessToken: string,
         
             console.log("App center response value: ", upload_result);
 
+            // Ссылки на загруженный билд если есть 
             let download_url = null;
             let install_url = null;
             if(upload_result && upload_result.length >= 1 && upload_result[0].download_url && upload_result[0].install_url){
@@ -166,7 +167,9 @@ async function uploadInAppCenter(appCenterAccessToken: string,
 
             let message: string = null;
             if (install_url && download_url){
-                message = `Uploaded on App center:\n- ${download_url}\n- ${install_url}`;
+                message = withSymbolsUploading ? 
+                    `Uploaded on App center:\n- ${download_url}\n- ${path.basename(symbolsFile)}` :
+                    `Uploaded on App center:\n- ${download_url}\n`;
             }else{
                 message = withSymbolsUploading ? 
                     `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
@@ -545,12 +548,20 @@ async function main() {
 
             // Помимо канала - пишем сообщения в канал
             if (resultSlackChannel){
-                await slack_uploader.sendMessageToSlack(slackApiToken, resultSlackChannel, message);
+                try {
+                    await slack_uploader.sendMessageToSlack(slackApiToken, resultSlackChannel, message);
+                }catch(err){
+                    console.error("Slack channel message failed:", err);
+                }
             }
 
             // Помимо канала - пишем сообщения в личку тоже
             if(resultSlackUser && resultSlackEmail){
-                await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, message, message.downloadUrl, message.installUrl);
+                try {
+                    await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, message, message.downloadUrl, message.installUrl);
+                }catch(err){
+                    console.error("Slack direct message failed:", err);
+                }
             }
         }
     }

@@ -37,6 +37,19 @@ function async_sleep(ms) {
     });
 }
 
+function contentTypeForFileName(fileName) {
+    // https://github.com/microsoft/fastlane-plugin-appcenter/blob/master/lib/fastlane/plugin/appcenter/actions/appcenter_upload_action.rb
+    const extention = path.extname(fileName);
+    switch (extention) {
+        case ".apk": 
+            return "application/vnd.android.package-archive";
+        case ".ipa": 
+            return "application/octet-stream";
+        default:
+            return "application/octet-stream";
+    }
+}
+
 async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGroups, buildFilePath, progressCb) {
     // https://github.com/wooga/atlas-appcenter/pull/27/commits/aa714825d31e409753ee83dff78524c9f8368ed3#diff-e0650eba63e46b95bafdca4afed38c80dddc58a061ee9d8eebb1fb6a72cefcbf
     // https://github.com/microsoft/fastlane-plugin-appcenter/blob/master/lib/fastlane/plugin/appcenter/actions/appcenter_upload_action.rb
@@ -44,7 +57,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
     // https://github.com/microsoft/appcenter/issues/2069#issuecomment-740590121
     // https://github.com/microsoft/appcenter/issues/2069#issuecomment-740654621
     // https://openapi.appcenter.ms/#/distribute/releases_createReleaseUpload
-    //
+    
     // Результат:
     // "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     // "upload_domain": "string",
@@ -56,7 +69,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
         method: "POST",
         json: true,
         headers:{
-            "Content-Type": "application/json; charset=utf-8"
+            "Content-Type": "application/json"
         },
         body: {
             //"release_id": 0,
@@ -65,7 +78,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
         }
     });
 
-    console.log("Upload info: ", uploadInfo);
+    //console.log("Upload info: ", uploadInfo);
 
     const uploadId = uploadInfo.id;
     const uploadDomain = uploadInfo.upload_domain;
@@ -80,10 +93,11 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
 
     const fileStat = fs.statSync(buildFilePath);
     const fileName = path.basename(buildFilePath);
-    const url = `${uploadDomain}/upload/set_metadata/${assetId}?file_name=${fileName}&file_size=${fileStat.size}&token=${uploadUrlEncodedToken}&content_type=application/octet-stream`;
+    const contentType = contentTypeForFileName(fileName);
+    const url = `${uploadDomain}/upload/set_metadata/${assetId}?file_name=${fileName}&file_size=${fileStat.size}&token=${uploadUrlEncodedToken}&content_type=${contentType}`;
     // const url = `${uploadDomain}/upload/set_metadata/${assetId}`
 
-    console.log(url, fileName, fileStat.size, uploadToken);
+    //console.log(url, fileName, fileStat.size, uploadToken);
 
     let metaInfo = await request({
         url: url,
@@ -107,17 +121,17 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
     // resume_restart
     // chunk_size
     // id
-    console.log("Upload meta info: ", metaInfo);
+    //console.log("Upload meta info: ", metaInfo);
 
     const chunkList = metaInfo.chunk_list;
     const chunkSize = metaInfo.chunk_size;
     
-    // Параллельная выгрузка, но с ограничением количества
+    // Параллельная выгрузка, но с ограничением количества одновременных тасков
     const uploadFutures = new Set<Promise<any>>();
     for (let i = 0; i < chunkList.length; i += 1){
         if (uploadFutures.size > 20){
             const result = await Promise.race(uploadFutures);
-            console.log(result);
+            //console.log(result);
         }
 
         const blockNumber = chunkList[i];
@@ -125,19 +139,24 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
         const end = ((begin + chunkSize - 1) < fileStat.size-1) ? (begin + chunkSize - 1) : fileStat.size-1;
         const dataLength = end - begin + 1;
 
-        console.log(begin, end, dataLength);
+        //console.log(begin, end, dataLength);
 
         const options = {
             start: begin, 
             end: end
         };
         const fileStream = fs.createReadStream(buildFilePath, options);
+        if (progressCb) {
+            fileStream.on("data", chunk => {
+                progressCb(chunk.length);
+            });
+        }
 
-        const chunkUploadUrl = `${uploadDomain}/upload/upload_chunk/${assetId}?token=${uploadUrlEncodedToken}&block_number=${blockNumber}`;
-
-        // "error":false,"chunk_num":1,"error_code":"None"
+        // "error":false,
+        // "chunk_num":1,
+        // "error_code":"None"
         let uploadFuture = request({
-            url: chunkUploadUrl,
+            url: `${uploadDomain}/upload/upload_chunk/${assetId}?token=${uploadUrlEncodedToken}&block_number=${blockNumber}`,
             timeout: 1000 * 180,
             // json: true,
             headers:{
@@ -165,13 +184,12 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
     // raw_location
     // absolute_uri
     // state
-    const uploadFinishedUrl = `${uploadDomain}/upload/finished/${assetId}?token=${uploadUrlEncodedToken}`;
     let uploadFinishedRes = await request({
-        url: uploadFinishedUrl,
+        url: `${uploadDomain}/upload/finished/${assetId}?token=${uploadUrlEncodedToken}`,
         json: true,
         method: "POST"
     });
-    console.log("Upload finished result: ", uploadFinishedRes);
+    //console.log("Upload finished result: ", uploadFinishedRes);
 
     let changeStatusRes = await defaultRequest({
         url: `/apps/${appOwnerName}/${appName}/uploads/releases/${uploadId}`,
@@ -182,7 +200,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
             id: uploadId
         }
     });
-    console.log("Change status result: ", changeStatusRes);
+    //console.log("Change status result: ", changeStatusRes);
 
     // Ждем успешного статуса проверки
     let releaseId = null;
@@ -195,7 +213,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
             json: true
         }); 
         
-        console.log("Upload status info: ", uploadStatusInfo);
+        //console.log("Upload status info: ", uploadStatusInfo);
 
         // uploadStarted, uploadFinished, readyToBePublished, malwareDetected, error
         if (uploadStatusInfo.upload_status == "uploadFinished") {
@@ -209,6 +227,34 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
             // continue;
             // console.log
             throw Error("Invalid upload pooling status: " + uploadStatusInfo);
+        }
+    }
+
+    // Активируем на конкретные группы если надо
+    if (distributionGroups && releaseId){
+        const idValue = releaseId;
+
+        let groupsArray = [];
+        for(const index in distributionGroups){
+            groupsArray.push({
+                "name": distributionGroups[index],
+            });
+        }
+
+        try {
+            // TODO: https://github.com/microsoft/appcenter/issues/2069#issuecomment-740654621
+            const distributionResult = await defaultRequest({
+                url: `/apps/${appOwnerName}/${appName}/releases/${idValue}`,
+                method: "PATCH",
+                json: true,
+                body: {
+                    "destinations": groupsArray
+                }
+            });
+            return distributionResult;
+        } catch (error) {
+            console.log(error);
+            throw error;
         }
     }
 
@@ -243,49 +289,6 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
         json: true
     });
     console.log("Release info: ", releaseInfo);
-
-    // Коммит отгрузки
-    // Параметры в выводе
-    //     release_id: '17',
-    //     release_url: 'v0.1/apps/Game-Insight-HQ-Organization/QC-Paradise-Island-2-Android/releases/17'
-    // const uploadCommitInfo = await defaultRequest({
-    //     url: `/apps/${appOwnerName}/${appName}/uploads/releases/${uploadId}`,
-    //     method: "PATCH",
-    //     json: true,
-    //     body: {
-    //         "status": "committed"
-    //     }
-    // });
-    // console.log("Upload commit info: ", uploadCommitInfo);
-
-    // Активируем на конкретные группы если надо
-    if (distributionGroups && releaseId){
-        const idValue = releaseId;
-
-        let groupsArray = [];
-        for(const index in distributionGroups){
-            groupsArray.push({
-                "name": distributionGroups[index],
-            });
-        }
-
-        try {
-            // TODO: https://github.com/microsoft/appcenter/issues/2069#issuecomment-740654621
-
-            const distributionResult = await defaultRequest({
-                url: `/apps/${appOwnerName}/${appName}/releases/${idValue}`,
-                method: "PATCH",
-                json: true,
-                body: {
-                    "destinations": groupsArray
-                }
-            });
-            return distributionResult;
-        } catch (error) {
-            console.log(error);
-            throw error;
-        }
-    }
 
     return releaseInfo;
 }

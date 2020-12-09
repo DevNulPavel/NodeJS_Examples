@@ -20,6 +20,9 @@ export SSH_PASS=""
 export SSH_PRIVATE_KEY_PATH=""
 export SLACK_API_TOKEN=""
 export SLACK_CHANNEL=""
+export SLACK_TEXT_PREFIX=""
+export SLACK_USER=""
+export SLACK_EMAIL=""
 
 # Amazon
 # node build/app/main.js \
