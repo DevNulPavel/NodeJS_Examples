@@ -162,8 +162,10 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                 install_url = upload_result[0].install_url;
             }
 
+            console.log("\n\n");
             console.log("Download url:", download_url);
             console.log("Install url:", install_url);
+            console.log("\n\n");
 
             let message: string = null;
             if (install_url && download_url){

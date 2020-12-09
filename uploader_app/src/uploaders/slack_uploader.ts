@@ -253,7 +253,7 @@ export async function sendTextToSlackUser(apiToken: string, user: string, email:
             throw Error(`Id request failed for user: ${user}, email: ${email}`);
         }
     }
-    //console.log("User id:", userId);
+    console.log("User id:", userId);
     
     // Open direct message channel
     const directMessageResp = await request({
@@ -269,7 +269,7 @@ export async function sendTextToSlackUser(apiToken: string, user: string, email:
         }
     });
     const channelIdVal = directMessageResp.channel.id;
-    //console.log("Channel id:", channelIdVal);
+    console.log("Channel id:", channelIdVal);
     
     if(text){
         //console.log("Send text:", text);

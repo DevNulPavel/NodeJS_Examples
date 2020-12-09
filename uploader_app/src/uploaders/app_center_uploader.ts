@@ -176,7 +176,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
     }
     while(uploadFutures.size > 0){
         const result = await Promise.race(uploadFutures);
-        console.log(result);
+        //console.log(result);
     }
 
     // error_code
