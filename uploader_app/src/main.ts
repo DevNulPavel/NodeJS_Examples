@@ -152,7 +152,7 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                 symbolsFile, 
                 progressCb); // Нужен ли интерактивный режим?
         
-            console.log("App center response value: ", upload_result);
+            //console.log("App center response value: ", upload_result);
 
             // Ссылки на загруженный билд если есть 
             let download_url = null;
@@ -162,10 +162,10 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                 install_url = upload_result[0].install_url;
             }
 
-            console.log("\n\n");
-            console.log("Download url:", download_url);
-            console.log("Install url:", install_url);
-            console.log("\n\n");
+            // console.log("\n\n");
+            // console.log("Download url:", download_url);
+            // console.log("Install url:", install_url);
+            // console.log("\n\n");
 
             let message: string = null;
             if (install_url && download_url){
@@ -546,23 +546,34 @@ async function main() {
                 message = "```" + result.message + "```";
             }
 
-            console.log("Message to slack: " + message)
+            //console.log("Message to slack: " + message)
 
             // Помимо канала - пишем сообщения в канал
             if (resultSlackChannel){
                 try {
                     await slack_uploader.sendMessageToSlack(slackApiToken, resultSlackChannel, message);
                 }catch(err){
-                    console.error("Slack channel message failed:", err);
+                    //console.error("Slack channel message failed:", err);
                 }
             }
 
             // Помимо канала - пишем сообщения в личку тоже
             if(resultSlackUser && resultSlackEmail){
                 try {
-                    await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, message, message.downloadUrl, message.installUrl);
+                    await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, message, null, null);
                 }catch(err){
-                    console.error("Slack direct message failed:", err);
+                    //console.error("Slack direct message failed:", err);
+                }
+            }
+        }
+
+        if(result.downloadUrl !== undefined){
+            // Помимо канала - пишем сообщения в личку тоже
+            if(resultSlackUser && resultSlackEmail){
+                try {
+                    await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, null, result.downloadUrl, result.installUrl);
+                }catch(err){
+                    //console.error("Slack direct message failed:", err);
                 }
             }
         }

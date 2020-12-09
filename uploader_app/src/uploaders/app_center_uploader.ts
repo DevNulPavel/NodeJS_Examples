@@ -288,7 +288,7 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
         method: "GET",
         json: true
     });
-    console.log("Release info: ", releaseInfo);
+    //console.log("Release info: ", releaseInfo);
 
     return releaseInfo;
 }
