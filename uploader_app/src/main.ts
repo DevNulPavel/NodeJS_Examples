@@ -37,7 +37,9 @@ const validateArgumentsLambda = (msg: string, args: IArguments)=>{
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 interface UploadResult{
-    message?: string 
+    message?: string,
+    downloadUrl?: string,
+    installUrl?: string,
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -149,15 +151,22 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                 withSymbolsUploading, 
                 symbolsFile, 
                 progressCb); // Нужен ли интерактивный режим?
-            
-            let url = null;
-            if(upload_result && upload_result.length > 1 && upload_result[0].release_url){
-                url = upload_result[0].release_url;
+        
+            console.log("App center response value: ", upload_result);
+
+            let download_url = null;
+            let install_url = null;
+            if(upload_result && upload_result.length >= 1 && upload_result[0].download_url && upload_result[0].install_url){
+                download_url = upload_result[0].download_url;
+                install_url = upload_result[0].install_url;
             }
 
+            console.log("Download url:", download_url);
+            console.log("Install url:", install_url);
+
             let message: string = null;
-            if (url){
-                message = `Uploaded on App center:\n- ${url}`;
+            if (install_url && download_url){
+                message = `Uploaded on App center:\n- ${download_url}\n- ${install_url}`;
             }else{
                 message = withSymbolsUploading ? 
                     `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
@@ -166,7 +175,9 @@ async function uploadInAppCenter(appCenterAccessToken: string,
 
             console.log("App center uploading finished");
             return {
-                message: message
+                message: message,
+                downloadUrl: download_url,
+                installUrl: install_url
             };
         }catch(err){
             console.log("App center uploading failed, repeat after 15 seconds");
@@ -530,14 +541,16 @@ async function main() {
                 message = "```" + result.message + "```";
             }
 
+            console.log("Message to slack: " + message)
+
             // Помимо канала - пишем сообщения в канал
             if (resultSlackChannel){
                 await slack_uploader.sendMessageToSlack(slackApiToken, resultSlackChannel, message);
             }
 
             // Помимо канала - пишем сообщения в личку тоже
-            if(resultSlackUser || resultSlackEmail){
-                await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, message, null, null);
+            if(resultSlackUser && resultSlackEmail){
+                await slack_uploader.sendTextToSlackUser(slackApiToken, resultSlackUser, resultSlackEmail, message, message.downloadUrl, message.installUrl);
             }
         }
     }
