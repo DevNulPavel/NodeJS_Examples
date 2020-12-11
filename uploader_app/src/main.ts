@@ -113,7 +113,7 @@ async function uploadInAmazon(amazonClientId: string, amazonClientSecret: string
             await amazon_uploader.uploadBuildOnServer(amazonClientId, amazonClientSecret, amazonAppId, amazonInputFile, progressCb);
             console.log("Amazon uploading finished");
             return {
-                message: `Uploaded on Amazon:\n- ${path.basename(amazonInputFile)}`
+                message: `Uploaded in Amazon:\n- ${path.basename(amazonInputFile)}`
             };
         }catch(err){
             console.log("Amazon uploading failed, repeat after 15 seconds");
@@ -152,7 +152,7 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                 symbolsFile, 
                 progressCb); // Нужен ли интерактивный режим?
         
-            //console.log("App center response value: ", upload_result);
+            // console.log("App center response value: ", upload_result);
 
             // Ссылки на загруженный билд если есть 
             let download_url = null;
@@ -170,12 +170,12 @@ async function uploadInAppCenter(appCenterAccessToken: string,
             let message: string = null;
             if (install_url && download_url){
                 message = withSymbolsUploading ? 
-                    `Uploaded on App center:\n- ${download_url}\n- ${path.basename(symbolsFile)}` :
-                    `Uploaded on App center:\n- ${download_url}\n`;
+                    `Uploaded in App center:\n- ${download_url}\n- ${path.basename(symbolsFile)}` :
+                    `Uploaded in App center:\n- ${download_url}\n`;
             }else{
                 message = withSymbolsUploading ? 
-                    `Uploaded on App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
-                    `Uploaded on App center:\n- ${path.basename(inputFile)}`;
+                    `Uploaded in App center:\n- ${path.basename(inputFile)}\n- ${path.basename(symbolsFile)}` : 
+                    `Uploaded in App center:\n- ${path.basename(inputFile)}`;
             }
 
             console.log("App center uploading finished");
@@ -257,7 +257,7 @@ async function uploadInGPlay(googleEmail: string, googleKeyId: string,
             await gplay_uploader.uploadBuildWithAuth(authClient, packageName, inputFile, targetTrack, progressCb);
             console.log("Google play uploading finished");
             return {
-                message: `Uploaded on Google Play:\n- ${path.basename(inputFile)}`
+                message: `Uploaded in Google Play:\n- ${path.basename(inputFile)}`
             };
         }catch(err){
             console.log("Google play uploading failed, repeat after 15 seconds");
@@ -279,7 +279,7 @@ async function uploadInIOSStore(iosUser: string, iosPass: string, ipaToIOSAppSto
             await ios_uploader.uploadToIOSAppStore(iosUser, iosPass, ipaToIOSAppStore);
             console.log("IOS uploading finished");
             return {
-                message: `Uploaded on iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
+                message: `Uploaded in iOS store:\n- ${path.basename(ipaToIOSAppStore)}`
             };
         }catch(err){
             console.log("IOS uploading failed, repeat after 15 seconds");
@@ -307,7 +307,7 @@ async function uploadFilesBySSH(sshServerName: string, sshUser: string, sshPass:
             }).join("\n- ");
             console.log("SSH uploading finished");
             return {
-                message: `Uploaded on Samba (${sshTargetDir}):\n- ${filesNames}`
+                message: `Uploaded in Samba (${sshTargetDir}):\n- ${filesNames}`
             };
         }catch(err){
             console.log("IOS uploading failed, repeat after 15 seconds");
@@ -538,7 +538,7 @@ async function main() {
     });
     while(allPromises.size > 0){
         const result: UploadResult = await Promise.race(allPromises);
-        if(result.message !== undefined){
+        if(result.message){
             let message = null;
             if (resultSlackTextPrefix){
                 message = resultSlackTextPrefix + " " + "```" + result.message + "```";
@@ -567,7 +567,7 @@ async function main() {
             }
         }
 
-        if(result.downloadUrl !== undefined){
+        if(result.downloadUrl){
             // Помимо канала - пишем сообщения в личку тоже
             if(resultSlackUser && resultSlackEmail){
                 try {
