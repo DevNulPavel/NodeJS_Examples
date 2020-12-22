@@ -397,6 +397,7 @@ async function main() {
             return val && (val.length > 0);
         });
     };
+    commander.allowUnknownOption();
     commander.option("--amazon_input_file <input apk>", "Input file for amazon uploading");
     commander.option("--app_center_input_file <input .apk or .ipa>", "Input file for app center uploading");
     commander.option("--app_center_symbols_file <input .dSYM.zip>", "Input symbols archive for app center uploading");
