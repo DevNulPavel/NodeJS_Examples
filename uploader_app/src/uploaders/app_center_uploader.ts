@@ -43,8 +43,18 @@ function contentTypeForFileName(fileName) {
     switch (extention) {
         case ".apk": 
             return "application/vnd.android.package-archive";
+        case ".aab": 
+            return "application/vnd.android.package-archive";        
         case ".ipa": 
             return "application/octet-stream";
+        case ".appx": 
+            return "application/x-appx";
+        case ".appxbundle": 
+            return "application/x-appxbundle";
+        case ".appxupload": 
+            return "application/x-appxupload";
+        case ".appxsym": 
+            return "application/x-appxupload";
         default:
             return "application/octet-stream";
     }
@@ -288,6 +298,7 @@ async function uploadBuild(defaultRequest,
                 method: "PATCH",
                 json: true,
                 body: {
+                    "notify_testers": false,
                     "destinations": groupsArray
                 }
             });
