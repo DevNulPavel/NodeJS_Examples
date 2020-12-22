@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+export GIT_BRANCH=""
+export GIT_COMMIT=""
 export AMAZON_CLIENT_ID=""
 export AMAZON_CLIENT_SECRET=""
 export AMAZON_APP_ID=""
@@ -47,7 +49,8 @@ export SLACK_EMAIL=""
 # App center
 # node build/app/main.js \
 #     --app_center_input_file "/Users/devnul/Downloads/Island2-11.15.0_314-AppStore-20191112_164601-821dc9f.ipa" \
-#     --app_center_distribution_groups "17-Bullets","All-users-of-Mystery-Manor-xGen-iOS-PK","Collaborators","Gi-All-Limited","Gi-QA"
+#     --app_center_distribution_groups "Paradise Island 2 Team","Collaborators" \
+#     --app_center_build_description "Test description"
 
 # Google play
 # node build/app/main.js \

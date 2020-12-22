@@ -129,6 +129,9 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                                  appCenterAppName: string, 
                                  appCenterAppOwnerName: string, 
                                  distrubutionGroups: string[], 
+                                 appCenterBuildDescription: string,
+                                 gitBranch,
+                                 gitCommit,
                                  inputFile: string, 
                                  symbolsFile: string): Promise<UploadResult>{
     if (!appCenterAccessToken || !appCenterAppName || !appCenterAppOwnerName || !inputFile){
@@ -147,6 +150,9 @@ async function uploadInAppCenter(appCenterAccessToken: string,
                 appCenterAppName, 
                 appCenterAppOwnerName, 
                 distrubutionGroups,
+                appCenterBuildDescription,
+                gitBranch,
+                gitCommit,
                 inputFile, 
                 withSymbolsUploading, 
                 symbolsFile, 
@@ -353,6 +359,8 @@ async function sendTextToSlackUser(slackApiToken: string, slackUser: string, sla
 
 async function main() {
     // Пробуем получить из переменных окружения данные для авторизации
+    const gitBranch = process.env["GIT_BRANCH"];
+    const gitCommit = process.env["GIT_COMMIT"];
     const amazonClientId = process.env["AMAZON_CLIENT_ID"];
     const amazonClientSecret = process.env["AMAZON_CLIENT_SECRET"];
     const amazonAppId = process.env["AMAZON_APP_ID"];
@@ -393,6 +401,7 @@ async function main() {
     commander.option("--app_center_input_file <input .apk or .ipa>", "Input file for app center uploading");
     commander.option("--app_center_symbols_file <input .dSYM.zip>", "Input symbols archive for app center uploading");
     commander.option("--app_center_distribution_groups <comma_separeted_groups>", "App center distribution groups: 'group1','group2'", commaSeparatedList);
+    commander.option("--app_center_build_description <text>", "App center build description");
     commander.option("--google_drive_files <comma_separeted_file_paths>", "Input files for uploading: -gdrivefiles 'file1','file2'", commaSeparatedList);
     commander.option("--google_drive_target_folder_id <folder_id>", "Target Google drive folder ID");
     commander.option("--google_drive_target_subfolder_name <folder_name>", "Target Google drive subfolder name");
@@ -417,6 +426,7 @@ async function main() {
     const appCenterFile: string = commander.app_center_input_file;
     const appCenterSymbols: string = commander.app_center_symbols_file;
     const appCenterdistributionGroups: string[] = commander.app_center_distribution_groups;
+    const appCenterBuildDescription: string = commander.app_center_build_description;
     const googleDriveFiles: string[] = commander.google_drive_files;
     const googleDriveFolderId : string= commander.google_drive_target_folder_id;
     const googleDriveTargetSubFolderName: string = commander.google_drive_target_subfolder_name;
@@ -477,7 +487,15 @@ async function main() {
 
     // App center
     if(appCenterFile){
-        const uploadProm = uploadInAppCenter(appCenterAccessToken, appCenterAppName, appCenterAppOwnerName, appCenterdistributionGroups, appCenterFile, appCenterSymbols);
+        const uploadProm = uploadInAppCenter(appCenterAccessToken, 
+                                             appCenterAppName, 
+                                             appCenterAppOwnerName, 
+                                             appCenterdistributionGroups, 
+                                             appCenterBuildDescription, 
+                                             gitBranch,
+                                             gitCommit,
+                                             appCenterFile, 
+                                             appCenterSymbols);
         allPromises.add(uploadProm);
     }
 

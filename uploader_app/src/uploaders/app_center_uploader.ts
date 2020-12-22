@@ -50,7 +50,15 @@ function contentTypeForFileName(fileName) {
     }
 }
 
-async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGroups, buildFilePath, progressCb) {
+async function uploadBuild(defaultRequest, 
+                           appOwnerName, 
+                           appName, 
+                           distributionGroups, 
+                           buildDescription,
+                           gitBranch,
+                           gitCommit,
+                           buildFilePath, 
+                           progressCb) {
     // https://github.com/wooga/atlas-appcenter/pull/27/commits/aa714825d31e409753ee83dff78524c9f8368ed3#diff-e0650eba63e46b95bafdca4afed38c80dddc58a061ee9d8eebb1fb6a72cefcbf
     // https://github.com/microsoft/fastlane-plugin-appcenter/blob/master/lib/fastlane/plugin/appcenter/actions/appcenter_upload_action.rb
 
@@ -230,6 +238,38 @@ async function uploadBuild(defaultRequest, appOwnerName, appName, distributionGr
         }
     }
 
+    // Прописываем описание билда
+    if(gitBranch && gitCommit && releaseId){
+        const idValue = releaseId;
+
+        const description = buildDescription ? 
+            `Branch: ${gitBranch}\n\nCommit: ${gitCommit}\n\n\n\n${buildDescription}` : `Branch: ${gitBranch}\n\nCommit: ${gitCommit}`;
+
+        // console.log("Test branch: ", gitBranch, gitCommit);
+
+        try {
+            // TODO: https://github.com/microsoft/appcenter/issues/2069#issuecomment-740654621
+            const descriptionResult = await defaultRequest({
+                url: `/apps/${appOwnerName}/${appName}/releases/${idValue}`,
+                method: "PUT",
+                json: true,
+                body: {
+                    "enabled": true,
+                    "release_notes": description,
+                    "build": {
+                        "branch_name": gitBranch,
+                        "commit_hash": gitCommit,
+                        "commit_message": ""
+                    }
+                }
+            });
+            // console.log("Description set info: ", descriptionResult);
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+    
     // Активируем на конкретные группы если надо
     if (distributionGroups && releaseId){
         const idValue = releaseId;
@@ -343,6 +383,9 @@ export async function uploadToHockeyApp(token: string,
                                         appName: string, 
                                         appOwnerName: string, 
                                         distributionGroups: string[], 
+                                        buildDescription: string,
+                                        gitBranch: string,
+                                        gitCommit: string,
                                         buildFilePath: string, 
                                         needSymbolsUploading: boolean, 
                                         symbolsFilePath: string, progressCb: (number)=>void) {
@@ -358,7 +401,7 @@ export async function uploadToHockeyApp(token: string,
     const promises = [];
 
     // Грузим билд на сервер
-    const uploadBuildProm = uploadBuild(defaultRequest, appOwnerName, appName, distributionGroups, buildFilePath, progressCb);
+    const uploadBuildProm = uploadBuild(defaultRequest, appOwnerName, appName, distributionGroups, buildDescription, gitBranch, gitCommit, buildFilePath, progressCb);
     promises.push(uploadBuildProm);
 
     // Грузим символы на сервер
